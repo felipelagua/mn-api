@@ -35,6 +35,14 @@
                 }
             }  
         }
+        function yesno($value,$message){
+            if($value==null){
+                $value="NO";
+            }
+            if($value!="SI" && $value!="NO"){
+                array_push($this->details,$message);
+            }
+        }
         function isGuid($value,$label){
             $state=false;
             if(isset($value)){

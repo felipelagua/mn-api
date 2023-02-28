@@ -1,32 +1,33 @@
 <?php
-class localidad extends Controller{
+class Motivoingreso extends Controller{
     public function __construct(){
         parent::__construct();
-        parent::usingData("DLocalidad");
-        parent::usingEntity("ELocalidad");
-        parent::usingValidate("VLocalidad");
+        parent::usingData("DMotivoingreso");
+        parent::usingEntity("EMotivoingreso");
+        parent::usingValidate("VMotivoingreso");
     }
 
     public function registrar(){
         http::put();
         $input=input();
-        $o=new ELocalidad($input);
-        $v=new VLocalidad();
+        
+        $o=new EMotivoingreso($input);
+        $v=new VMotivoingreso();
         $v->validate($o);
-        $d=new DLocalidad();
+        $d=new DMotivoingreso();
 
         $d->registrar($o);
     }
     public function eliminar(){
         http::delete();
         $input=input();
-        $user=new ELocalidad($input);
-        $d=new DLocalidad();
+        $user=new EMotivoingreso($input);
+        $d=new DMotivoingreso();
         $d->eliminar($user);
     }
     public function listar(){
         http::post();
-        $d=new DLocalidad();
+        $d=new DMotivoingreso();
         $d->listar();
     }
 }

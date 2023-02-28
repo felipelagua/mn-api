@@ -135,7 +135,6 @@ class Model{
             }
         }
         $sql.=" from $table where activo=1";
-        echo $sql;
          $dt=$this->db->reader($sql);
          $this->gotoSuccessData($dt);
     }
