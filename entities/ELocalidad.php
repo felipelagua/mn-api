@@ -4,6 +4,11 @@
         public $nombre;
         public $direccion;
  
-        public function __construct($input) {  $this->set($input);  }
+        public function __construct($input) {  
+            $this->set($input);
+            if(!isset($this->id)){
+                $this->id=guid();
+            }     
+        }
     }
 ?>

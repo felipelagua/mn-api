@@ -124,7 +124,7 @@ class Model{
     }
     function all($table,$entity){
         $i=0;
-        $userid=auth::user();
+ 
         $sql="select ";
  
         foreach ($entity as $key =>$value){
@@ -138,6 +138,24 @@ class Model{
          $dt=$this->db->reader($sql);
          $this->gotoSuccessData($dt);
     }
+
+    function sqlread( $sql){
+         $dt=$this->db->reader($sql);
+         $this->gotoSuccessData($dt);
+    }
+    function sqlGet( $sql,$id){
+        if(!isGuid($id)){
+            $this->gotoError("El registro no es válido 1");
+        }
+        $sql=str_replace("@id",$id,$sql);
+        $dt=$this->db->reader($sql);
+        if(count($dt)>0){
+            $this->gotoSuccessData($dt[0]);
+        }
+        else{
+            $this->gotoError("El registro no es válido2");
+        }
+   }
     function exist($table,$entity){
         $sql="select id,activo from $table where id='".$entity->id."'";
         $dt = $this->db->reader($sql);

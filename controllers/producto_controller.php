@@ -10,12 +10,12 @@ class producto extends Controller{
     public function registrar(){
         http::put();
         $input=input();
-        $user=new EProducto($input);
+        $o=new EProducto($input);
         $v=new VProducto();
-        $v->validate($user);
+        $v->validate($o);
         $d=new DProducto();
 
-        $d->registrar($user);
+        $d->registrar($o);
     }
     public function eliminar(){
         http::delete();
@@ -26,8 +26,18 @@ class producto extends Controller{
     }
     public function listar(){
         http::post();
+        $input=input();
+        $o=new EProducto($input);
         $d=new DProducto();
-        $d->listar();
+        $d->listar($o);
+    }
+    public function obtener(){
+        http::post();
+        $input=input();
+     
+        $o=new EProducto($input);
+        $d=new DProducto();
+        $d->obtener($o);
     }
 }
 

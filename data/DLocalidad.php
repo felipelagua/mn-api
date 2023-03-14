@@ -7,9 +7,13 @@
         public function eliminar($o){
             $this->delete($this->table,$o);
         }
-        public function listar(){
-            $ent=new ELocalidad(null);
-            $this->all($this->table,$ent);
+        public function listar($o){
+            $sql=" select id,nombre,direccion from localidad where activo=1 and nombre like  '%".$o->nombre."%'";
+            $this->sqlread($sql);
+        }
+        public function obtener($o){
+            $sql=" select id,nombre,direccion from localidad where id='@id' and activo=1";
+            $this->sqlGet($sql,$o->id);
         }
     }
 ?>
