@@ -27,8 +27,17 @@ class Motivoingreso extends Controller{
     }
     public function listar(){
         http::post();
+        $input=input();
+        $o=new EMotivoingreso($input);
         $d=new DMotivoingreso();
-        $d->listar();
+        $d->listar($o);
+    }
+    public function obtener(){
+        http::post();
+        $input=input();
+        $o=new EMotivoingreso($input);
+        $d=new DMotivoingreso();
+        $d->obtener($o);
     }
 }
 

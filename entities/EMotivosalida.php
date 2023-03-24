@@ -3,8 +3,10 @@
         public $id;
         public $nombre;
         public function __construct($input) { 
-            $this->id=guid();
             $this->set($input);
+            if(!isset($this->id)){
+                $this->id=guid();
+            } 
         }
     }
 ?>

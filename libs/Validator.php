@@ -24,6 +24,16 @@
                 }
             }
         }
+        function mayorque($value,$min,$message){
+            if(isset($value)){
+                if (!is_numeric($value) || $value<$min) {
+                    array_push($this->details,$message);
+                }
+            }
+            else{
+                array_push($this->details,$message);
+            }
+        }
         function minLength($value,$minLength,$label){
             if($value==null ){
                 array_push($this->details,"El campo $label es obligatorio");

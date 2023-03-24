@@ -34,7 +34,6 @@ class producto extends Controller{
     public function obtener(){
         http::post();
         $input=input();
-     
         $o=new EProducto($input);
         $d=new DProducto();
         $d->obtener($o);

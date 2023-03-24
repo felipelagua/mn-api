@@ -1,10 +1,10 @@
 <?php
-    class VUsuario extends Validator{
+    class VPermiso extends Validator{
         
         function validate($o){
             $this->isGuid($o->id,"id");
+            $this->required($o->codigo, "codigo");
             $this->required($o->nombre, "nombre");
-            $this->minLength($o->usuario,4,"usuario"); 
             $this->process();
         }
     }

@@ -40,6 +40,21 @@ class Model{
             $this->insert($table,$entity);
         }
     }
+    function saveWithExclude($table,$entity,$excludes){
+        $dtexist=$this->exist($table,$entity);
+        if(count($dtexist)>0){
+            $row=$dtexist[0];
+            if($row["activo"]==1){
+                $this->updateWithExclude($table,$entity,$excludes);
+            }
+            else{
+                $this->gotoError("No es un registro de $table válido");
+            }
+        }
+        else{
+            $this->insert($table,$entity);
+        }
+    }
     function update($table,$entity){
         $now=now();
         if(!isset($entity->id)){
@@ -65,9 +80,43 @@ class Model{
         $sql.=",usuario_modificacion='$userid',fecha_hora_modificacion=$now ";
         $sql.=" where id = '".$entity->id."' and activo=1";
         $this->db->execute($sql);
-        $this->gotoSuccess("Registro de ".$table." actualizado con éxito");
+        $this->gotoSuccess("Registro de ".$table." actualizado con éxito",$entity->id);
     }
-
+    function updateWithExclude($table,$entity,$excludes){
+        $now=now();
+        if(!isset($entity->id)){
+            $this->gotoError("El objeto no tiene el id asignado");
+        }
+        else{
+            if(!isGuid($entity->id)){
+                $this->gotoError("El objeto no tiene el id válido");
+            }
+        }
+        $userid=auth::user();
+        $i=0;
+        $sql="update ".$table." set ";
+        foreach ($entity as $key =>$value)
+        {
+            
+            if($key!="db" && $key!="id"){
+                $stateExclude=false;
+                foreach($excludes as $exclude){
+                    if($key==$exclude){
+                        $stateExclude=true;
+                    }
+                }
+                if(!$stateExclude){
+                    if($i>0){  $sql.=","; }
+                    $sql.=$key." = '".$value."'";
+                    $i++;
+                }
+            }
+        }
+        $sql.=",usuario_modificacion='$userid',fecha_hora_modificacion=$now ";
+        $sql.=" where id = '".$entity->id."' and activo=1";
+        $this->db->execute($sql);
+        $this->gotoSuccess("Registro de ".$table." actualizado con éxito",$entity->id);
+    }
     function insert($table,$entity){
         $now=now();
         $i=0;
@@ -93,7 +142,7 @@ class Model{
         }
         $sql.=",1,'$userid',$now)";
          $this->db->execute($sql);
-         $this->gotoSuccess("Registro de ".$table." creado con éxito");
+         $this->gotoSuccess("Registro de ".$table." creado con éxito",$entity->id);
     }
     function delete($table,$entity){
         $now=now();
@@ -112,7 +161,7 @@ class Model{
                 $userid=auth::user();
                 $sql="update $table set activo=0,usuario_modificacion='$userid',fecha_hora_modificacion=$now where id='".$entity->id."'";
                 $this->db->execute($sql);
-                $this->gotoSuccess("Registro de ".$table." eliminado con éxito");
+                $this->gotoSuccess("Registro de ".$table." eliminado con éxito","");
             }
             else{
                 $this->gotoError("No es un registro de $table válido");
@@ -156,6 +205,19 @@ class Model{
             $this->gotoError("El registro no es válido2");
         }
    }
+   function sqlgetrow( $sql){
+        $dt=$this->db->reader($sql);
+        if(count($dt)>0){
+            return $dt[0];
+        }
+        else{
+            return null;
+        }
+    }
+    function sqldata( $sql){
+        $dt=$this->db->reader($sql);
+        return $dt;
+    }
     function exist($table,$entity){
         $sql="select id,activo from $table where id='".$entity->id."'";
         $dt = $this->db->reader($sql);
@@ -169,10 +231,11 @@ class Model{
         echo json_encode($result);
         exit(); 
     }
-    private function gotoSuccess($message){
+    public function gotoSuccess($message,$id){
         $result=new Result();          
         $result->success=true;
         $result->message= $message;
+        $result->data=$id;
         echo json_encode($result);
         exit(); 
     }

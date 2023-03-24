@@ -26,8 +26,17 @@ class localidad extends Controller{
     }
     public function listar(){
         http::post();
+        $input=input();
+        $o=new ELocalidad($input);
         $d=new DLocalidad();
-        $d->listar();
+        $d->listar($o);
+    }
+    public function obtener(){
+        http::post();
+        $input=input();
+        $o=new ELocalidad($input);
+        $d=new DLocalidad();
+        $d->obtener($o);
     }
 }
 

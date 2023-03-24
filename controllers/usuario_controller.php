@@ -10,12 +10,12 @@ class usuario extends Controller{
     public function registrar(){
         http::put();
         $input=input();
-        $user=new EUsuario($input);
+        $o=new EUsuario($input);
         $v=new VUsuario();
-        $v->validate($user);
+        $v->validate($o);
         $d=new DUsuario();
 
-        $d->registrar($user);
+        $d->registrar($o);
     }
     public function eliminar(){
         http::delete();
@@ -26,8 +26,17 @@ class usuario extends Controller{
     }
     public function listar(){
         http::post();
+        $input=input();
+        $o=new EUsuario($input);
         $d=new DUsuario();
-        $d->listar();
+        $d->listar($o);
+    }
+    public function obtener(){
+        http::post();
+        $input=input();
+        $o=new EUsuario($input);
+        $d=new DUsuario();
+        $d->obtener($o);
     }
 }
 
