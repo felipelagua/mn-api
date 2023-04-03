@@ -3,6 +3,8 @@
         public $id;
         public $codigo;
         public $nombre;
+        public $url;
+        public $icono;
  
         public function __construct($input) {  
             $this->set($input);

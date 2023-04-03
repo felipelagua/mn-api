@@ -8,12 +8,12 @@
             $this->delete($this->table,$o);
         }
         public function listar($o){
-            $like=" and codigo like '".$o->codigo."%' and nombre like  '%".$o->nombre."%'";
-            $sql=" select id,codigo,nombre from ".$this->table." where activo=1 ".$like." order by codigo";
+            $like=" and (codigo like '".$o->nombre."%' or nombre like  '%".$o->nombre."%')";
+            $sql=" select id,codigo,nombre,url,icono from ".$this->table." where activo=1 ".$like." order by codigo";
             $this->sqlread($sql);
         }
         public function obtener($o){
-            $sql=" select id,codigo,nombre from ".$this->table." where id='@id' and activo=1";
+            $sql=" select id,codigo,nombre,url,icono from ".$this->table." where id='@id' and activo=1";
             $this->sqlGet($sql,$o->id);
         }
     }

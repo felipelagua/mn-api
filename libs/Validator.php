@@ -109,9 +109,14 @@
 
     class Result{
         public $success;  
+        public $status;
         public $message;   
         public $data;
         public $error;
+
+        public function __construct(){
+            $this->status=200;
+        }
     }
 
     class ResultError{

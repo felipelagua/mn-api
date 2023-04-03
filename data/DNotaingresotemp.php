@@ -45,7 +45,7 @@
             $this->gotoSuccess("Se grabaron los datos con éxito",$o->id);
 
         }
-
+        
         function existe(){
             $state=false;
             $usuarioid=auth::user();
@@ -133,6 +133,96 @@
 
              $this->db->execute($sqldet);
             $this->gotoSuccess("Se eliminó correctamente",$o->id); 
+        }
+
+        function finalizar(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+        
+            $hoy=now();
+            $sql=" select id,motivoingresoid,comentario
+             from ".$this->table." 
+             where localidadid='$localidadid' 
+             and usuario_creacion='$usuarioid'
+             and activo=1";
+
+             $sqldet=" select a.id,a.productoid,a.descripcion,a.cantidad,
+             case when b.id is null then 'N' else 'S' end as locprod,
+             case when b.cantidad is null then 0 else b.cantidad end as stock_actual
+             from ".$this->table."_detalle as a
+             left join localidad_producto as b on b.productoid=a.productoid and b.localidadid=a.localidadid
+             where a.localidadid='$localidadid' 
+             and a.usuario_creacion='$usuarioid'
+             and a.activo=1";
+             
+             
+            $dtcab=$this->sqldata($sql);
+            $dtdet=$this->sqldata($sqldet);
+
+            $this->validarFinalizar($dtcab,$dtdet);
+
+            $cab=$dtcab[0];
+            $id=Guid();
+
+             $sql="insert into notaingreso(id,numero,localidadid,motivoingresoid,comentario,activo,usuario_creacion,fecha_hora_creacion)
+             select '$id',(select ifnull(max(numero),0)+1 from notaingreso),'$localidadid','".$cab["motivoingresoid"]."','".$cab["comentario"]."',1,'$usuarioid',$hoy ";
+
+             $array = array($sql);
+                $correlativo=1;
+             foreach($dtdet as $det){
+                $sql="insert into notaingreso_detalle(id,correlativo,notaingresoid,localidadid,productoid,descripcion,cantidad,activo,usuario_creacion,fecha_hora_creacion)
+                values(uuid(),$correlativo,'$id','$localidadid','".$det["productoid"]."','".$det["descripcion"]."','".$det["cantidad"]."',1,'$usuarioid',$hoy)";
+                array_push($array,$sql);
+
+                $productoid=$det["productoid"];
+                if($det["locprod"]=="N"){
+                    $sql="insert into localidad_producto(id,localidadid,productoid,cantidad,activo,usuario_creacion,fecha_hora_creacion)
+                    values(uuid(),'$localidadid','$productoid',0,1,'$usuarioid',$hoy)";
+                    array_push($array,$sql);
+                }
+
+                $cantidad=$det["cantidad"];
+                $nuevo_saldo=$det["stock_actual"] + $cantidad;
+                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                values(uuid(),'$localidadid','$productoid','ING', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
+                array_push($array,$sql);
+
+                $sql="update localidad_producto set
+                cantidad=$nuevo_saldo , usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
+                where localidadid='$localidadid' and productoid='$productoid' ";
+                array_push($array,$sql);
+                $correlativo++;
+             }
+            $sql="delete from notaingresotemp_detalle
+            where localidadid='$localidadid' and usuario_creacion='$usuarioid' ";
+            array_push($array,$sql);
+
+            $sql="delete from notaingresotemp
+            where localidadid='$localidadid' and usuario_creacion='$usuarioid' ";
+            array_push($array,$sql);
+
+             $this->db->transac($array);
+            $this->gotoSuccess("Se grabaron los datos con éxito",$id);
+
+        }
+        function validarFinalizar($dtcab,$dtdet){
+            $details = array();
+            if(count($dtcab)==0){
+                array_push($details,"No hay una nota de ingreso pendiente para grabar");
+            }
+            else{
+                $motivoingresoid=$dtcab[0]["motivoingresoid"];
+                if(!isGuid($motivoingresoid)){
+                    array_push($details,"Debe seleccionar un motivo de ingreso");
+                }
+            }
+            if(count($dtdet)==0){
+                array_push($details,"Debe haber por lo menos un producto");
+            }
+            
+            if(count($details)){
+                $this->gotoErrorDetails("Ocurrieron algunos errores",$details); 
+            }
         }
     }
 ?>

@@ -4,6 +4,7 @@ class usuario extends Controller{
         parent::__construct();
         parent::usingData("DUsuario");
         parent::usingEntity("EUsuario");
+        parent::usingEntity("EUsuarioacceso");
         parent::usingValidate("VUsuario");
     }
 
@@ -38,6 +39,28 @@ class usuario extends Controller{
         $d=new DUsuario();
         $d->obtener($o);
     }
+    public function registrarAcceso(){
+        http::put();
+        $input=input();
+        $o=new EUsuarioacceso($input);
+        $d=new DUsuario();
+        $d->registrarAcceso($o);
+    }
+    public function eliminarAcceso(){
+        http::delete();
+        $input=input();
+        $o=new EUsuarioacceso($input);
+        $d=new DUsuario();
+        $d->eliminarAcceso($o);
+    }
+    public function listarAcceso(){
+        http::post();
+        $input=input();
+        $o=new EUsuario($input);
+        $d=new DUsuario();
+        $d->listarAcceso($o);
+    }
+
 }
 
 ?>

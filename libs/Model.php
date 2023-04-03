@@ -224,10 +224,17 @@ class Model{
         return $dt;
     }
     
-    private function gotoError($message){
+    public function gotoError($message){
         $result=new Result();          
         $result->success=false;
         $result->error= new ResultError($message,null);
+        echo json_encode($result);
+        exit(); 
+    }
+    public function gotoErrorDetails($message,$details){
+        $result=new Result();          
+        $result->success=false;
+        $result->error= new ResultError($message,$details);
         echo json_encode($result);
         exit(); 
     }
