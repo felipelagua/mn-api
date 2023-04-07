@@ -27,7 +27,7 @@
 
             $sqldet="SELECT 
             DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-            'MOVIMIENTO'  AS descripcion,a.tipo,convert(a.cantidad , decimal(10,0)) as cantidad,convert(a.saldo , decimal(10,0)) as saldo
+            a.descripcion,a.tipo,convert(a.cantidad , decimal(10,0)) as cantidad,convert(a.saldo , decimal(10,0)) as saldo
             FROM localidad_producto_detalle AS a
             WHERE a.productoid='$o->id'
             and a.localidadid='$localidadid'

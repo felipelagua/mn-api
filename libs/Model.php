@@ -220,7 +220,7 @@ class Model{
     }
     function exist($table,$entity){
         $sql="select id,activo from $table where id='".$entity->id."'";
-        $dt = $this->db->reader($sql);
+        $dt = $this->sqldata($sql);
         return $dt;
     }
     

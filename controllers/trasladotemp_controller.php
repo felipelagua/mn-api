@@ -1,0 +1,67 @@
+<?php
+class Trasladotemp extends Controller{
+    public function __construct(){
+        parent::__construct();
+        parent::usingEntity("ETrasladotemp");
+        parent::usingEntity("ETrasladoDetalle");
+        parent::usingData("DTrasladotemp");
+        parent::usingValidate("VTrasladoDetalle");
+        parent::usingEntity("EFiltro");
+    }
+
+    public function registrar(){
+        http::role(Almacen_Nueva_Salida);
+        http::put();
+        $input=input();
+        $o=new ETrasladotemp($input);
+        $d=new DTrasladotemp();
+        $d->registrar($o);
+    }
+ 
+    public function obtener(){
+        http::role(Almacen_Nueva_Salida);
+        http::post();
+        $d=new DTrasladotemp();
+        $d->obtener();
+    }
+    public function listarDetalle(){
+        http::role(Almacen_Nueva_Salida);
+        http::post();
+        $d=new DTrasladotemp();
+        $d->listarDetalle();
+    }
+    public function buscarProducto(){
+        http::role(Almacen_Nueva_Salida);
+        http::post();
+        $input=input();
+        $o=new EFiltro($input);
+        $d=new DTrasladotemp();
+        $d->buscarProducto($o);
+    }
+    public function registrarDetalle(){
+        http::role(Almacen_Nueva_Salida);
+        http::put();
+        $input=input();
+        $o=new ETrasladoDetalle($input);
+        $v=new VTrasladoDetalle();
+        $v->validate($o);
+        $d=new DTrasladotemp();
+        $d->registrarDetalle($o);
+    }
+    public function eliminarDetalle(){
+        http::role(Almacen_Nueva_Salida);
+        http::delete();
+        $input=input();
+        $o=new ETrasladoDetalle($input); 
+        $d=new DTrasladotemp();
+        $d->eliminarDetalle($o);
+    }
+    public function finalizar(){
+        http::role(Almacen_Nueva_Salida);
+        http::put();
+        $d=new DTrasladotemp();
+        $d->finalizar();
+    }
+}
+
+?>

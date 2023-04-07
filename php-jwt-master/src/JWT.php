@@ -19,6 +19,8 @@ use \DateTime;
  * @license  http://opensource.org/licenses/BSD-3-Clause 3-clause BSD
  * @link     https://github.com/firebase/php-jwt
  */
+
+ include("ExpiredException.php");
 class JWT
 {
 
