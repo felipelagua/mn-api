@@ -10,6 +10,8 @@
         public $motivo;
         public $usuariocreador;
         public $numero;
+        public $localidaddestinoid ;
+        public $solicitadoporid;
         public function __construct($input) {  
             if($input!=null){
                 $this->set($input); 

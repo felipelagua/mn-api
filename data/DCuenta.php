@@ -2,32 +2,80 @@
     class DCuenta extends Model{
         private $table="cuenta";
 
-        public function crear($o){
-            $det=new ECuentaDetalle();
-            $det->id = guid();
-            $det->cuentaid=$o->id;
-            $det->tipo="ING";
-            $det->descripcion="SALDO INICIAL";
-            $det->monto=$o->saldo_inicial;
-            $det->saldo=$o->saldo_inicial;
- 
-             $sqlCrearCuenta=$this->sqlInsert($this->table,$o);
-             $sqlInsertarDetalle=$this->sqlInsert("cuenta_detalle",$det); 
-             $sqlActualizarSaldo=$this->sqlUpdateSum($this->table,$o->id,"saldo",$det->monto);
+        public function registrar($o){
+            if(!$this->existe($o)){
+                $det=new ECuentaDetalle();
+                $det->id = guid();
+                $det->cuentaid=$o->id;
+                $det->tipo="ING";
+                $det->descripcion="SALDO INICIAL";
+                $det->monto=$o->saldo_inicial;
+                $det->saldo=$o->saldo_inicial;
+    
+                $sqlCrearCuenta=$this->sqlInsert($this->table,$o);
+                $sqlInsertarDetalle=$this->sqlInsert("cuenta_detalle",$det); 
+                $sqlActualizarSaldo=$this->sqlUpdateSum($this->table,$o->id,"saldo",$det->monto);
 
-             $array = array($sqlCrearCuenta, $sqlInsertarDetalle, $sqlActualizarSaldo);
-             $this->db->transac($array);
+                $array = array($sqlCrearCuenta, $sqlInsertarDetalle, $sqlActualizarSaldo);
+                $this->db->transac($array);
+            }
+            else{
+                $this->actualizar($o);
+            }
+        }
+        private function actualizar($o){
+            $hoy=now();
+            $sql="update cuenta set 
+            nombre='$o->nombre',
+            venta='$o->venta',
+            usuarioid='$o->usuarioid',
+            formapagoid='$o->formapagoid',
+            fecha_hora_modificacion=$hoy
+            where id='$o->id'";
+            $this->db->execute($sql);
+            $this->gotoSuccess("Se actualizó la cuenta con éxito",$o->id);
+        }
+        private function existe($o){
+            $state=false;
+            $sql="select id from cuenta where id='$o->id' and activo=1";
+            $dt=$this->sqldata($sql);
+            if(count($dt)>0){
+                $state=true;
+            }
+            return $state;
         }
         public function eliminar($o){
             $this->delete($this->table,$o);
         }
         public function listar(){
-            $ent=new ECuentaDto(null);
-            $this->all($this->table,$ent);
+           $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.venta,
+           c.nombre as formapago_nombre,a.saldo,date_format(a.fecha_hora_modificacion,'%d/%m/%Y %H:%i') as fecha_hora
+           from cuenta as a
+           inner join usuario as b on b.id=a.usuarioid
+           inner join formapago as c on c.id = a.formapagoid
+           where a.activo=1";
+           $this->sqlread($sql);
         }
         public function obtener($o){
-            $row=$this->get("cuenta",$o->id,[]);
-            $this->gotoSuccessData($row);
+            $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.usuarioid,a.formapagoid,
+            c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta
+            from cuenta as a
+            inner join usuario as b on b.id=a.usuarioid
+            inner join formapago as c on c.id = a.formapagoid
+            where a.id='$o->id' and a.activo=1";
+
+            $sqlusuario="select id,nombre
+            from usuario where activo=1 
+            order by nombre";
+
+            $sqlformapago="select id,nombre
+            from formapago where activo=1 
+            order by nombre";
+
+            $data["ent"]=$this->sqlgetrow($sql);
+            $data["personas"]=$this->sqldata($sqlusuario);
+            $data["formapago"]=$this->sqldata($sqlformapago);
+            $this->gotoSuccessData($data);
         }
         public function registrarMovimiento($o){
             $row=$this->get($this->table,$o->cuentaid,["saldo"]);
@@ -76,5 +124,65 @@
             $array = array($sqlInsertarDetalleOrigen,$sqlActualizarSaldoOrigen,$sqlInsertarDetalleDestino,$sqlActualizarSaldoDestino);
             $this->db->transac($array);
         } 
+
+        public function obtenerListas(){
+
+            $sqlusuario="select id,nombre
+            from usuario where activo=1 
+            order by nombre";
+
+            $sqlformapago="select id,nombre
+            from formapago where activo=1 
+            order by nombre";
+
+            $data["personas"]=$this->sqldata($sqlusuario);
+            $data["formapago"]=$this->sqldata($sqlformapago);
+            $this->gotoSuccessData($data);
+        }
+        public function obtenerListasTransferir(){
+
+            $sqlcuenta="SELECT a.id,concat(a.nombre,' = S/ ',a.saldo) AS nombre
+            FROM cuenta AS a
+            WHERE a.activo=1
+            ORDER BY a.nombre";
+
+            $data["origen"]=$this->sqldata($sqlcuenta);
+            $data["destino"]=$this->sqldata($sqlcuenta);
+            $this->gotoSuccessData($data);
+        }
+
+        public function obtenerDetalle($o){
+            $sql=  $sql="SELECT a.id,a.nombre,saldo
+            FROM cuenta AS a
+            WHERE a.id =  '$o->id' and a.activo=1";
+
+            $sqldet="SELECT 
+            DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
+            a.descripcion,a.monto,a.saldo,a.tipo
+            FROM cuenta_detalle AS a
+            WHERE a.cuentaid='$o->id'
+            and a.activo=1
+            ORDER BY a.fecha_hora_creacion DESC
+            LIMIT 0,100";
+
+            $data["cabecera"]=$this->sqlgetrow($sql);
+            $data["detalle"]=$this->sqldata($sqldet);
+            $this->gotoSuccessData($data);
+        }
+        public function obtenerListasMov(){
+
+            $sqlcuenta="SELECT a.id,concat(a.nombre,' = S/ ',a.saldo) AS nombre
+            FROM cuenta AS a
+            WHERE a.activo=1
+            ORDER BY a.nombre";
+
+            $sqltipo="SELECT 'ING' AS id,'INGRESO' AS nombre
+            UNION ALL
+            SELECT 'SAL' AS id,'SALIDA' AS nombre";
+
+            $data["cuenta"]=$this->sqldata($sqlcuenta);
+            $data["tipo"]=$this->sqldata($sqltipo);
+            $this->gotoSuccessData($data);
+        }
     }
 ?>

@@ -12,14 +12,14 @@ class cuenta extends Controller{
         parent::usingValidate("VCuentaTransferir");
     }
 
-    public function crear(){
+    public function registrar(){
         http::put();
         $input=input();
         $o=new ECuenta($input);
         $v=new VCuenta();
         $v->validate($o);
         $d=new DCuenta();
-        $d->crear($o);
+        $d->registrar($o);
     }
     public function registrarMovimiento(){
         http::put();
@@ -45,7 +45,7 @@ class cuenta extends Controller{
         $d->listar();
     }
     public function obtener(){
-        http::get();
+        http::post();
         $input=input();
         $o=new ECuenta($input);
         $d=new DCuenta();
@@ -58,6 +58,28 @@ class cuenta extends Controller{
         $v->validate($o);
         $d=new DCuenta();
         $d->transferir($o);
+    }
+    public function obtenerListas(){
+        http::post();
+        $d=new DCuenta();
+        $d->obtenerListas();
+    }
+    public function obtenerListasTransferir(){
+        http::post();
+        $d=new DCuenta();
+        $d->obtenerListasTransferir();
+    }
+    public function obtenerDetalle(){
+        http::post();
+        $input=input();
+        $o=new ECuenta($input);
+        $d=new DCuenta();
+        $d->obtenerDetalle($o);
+    }
+    public function obtenerListasMov(){
+        http::post();
+        $d=new DCuenta();
+        $d->obtenerListasMov();
     }
 }
 

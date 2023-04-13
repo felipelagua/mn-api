@@ -5,14 +5,16 @@
             $localidadid=auth::local();
             $sql="
             SELECT a.id, date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_hora_creacion,
-            a.numero,b.nombre AS motivosalida_nombre,
+            a.numero,b.nombre AS localidaddestino_nombre,
             a.comentario,
             c.nombre AS localidad_nombre,
-            d.nombre AS usuario_nombre
+            d.nombre AS usuario_nombre,
+            e.nombre as solicitadopor_nombre
             FROM traslado AS a
-            INNER JOIN motivosalida AS b ON b.id=a.motivosalidaid
+            INNER JOIN localidad AS b ON b.id=a.localidaddestinoid
             INNER JOIN localidad AS c ON c.id=a.localidadid
             INNER JOIN usuario AS d ON d.id=a.usuario_creacion
+            INNER JOIN usuario AS e ON e.id=a.solicitadoporid
             WHERE a.localidadid='$localidadid'";
             if($o->tipo=="M"){
                 $sql.=" and date_format(a.fecha_hora_creacion,'%Y') = '$o->anio'
@@ -21,8 +23,9 @@
             else{
                 $sql.=" and date_format(a.fecha_hora_creacion,'%Y-%m-%d') between  '$o->desde' and  '$o->hasta'";
             }
-            $sql.=" and ('$o->motivo'='X' or a.motivosalidaid='$o->motivo')";
+            $sql.=" and ('$o->localidaddestinoid'='X' or a.localidaddestinoid='$o->localidaddestinoid')";
             $sql.=" and ('$o->usuariocreador'='X' or a.usuario_creacion='$o->usuariocreador')";
+            $sql.=" and ('$o->solicitadoporid'='X' or a.solicitadoporid='$o->solicitadoporid')";
             $sql.=" and ('$o->numero'='' or a.numero='$o->numero')";
             $sql.=" order by a.fecha_hora_creacion desc";
            
@@ -63,6 +66,8 @@
             $sqlsolicitante="SELECT id,nombre FROM usuario WHERE id IN (SELECT solicitadoporid FROM traslado WHERE activo=1) AND activo=1";
             $sqlanioactual="SELECT date_format($hoy,'%Y') AS id,date_format($hoy,'%Y') as nombre";
 
+            $sqllocalidaddestino="SELECT id,nombre FROM localidad WHERE id IN (SELECT localidaddestinoid FROM traslado WHERE activo=1) AND activo=1";
+
             $anios=$this->sqldata($sqlanio);
             $anioactual=$this->sqlgetrow($sqlanioactual);
             if(count($anios)==0){
@@ -76,6 +81,7 @@
             $data["anioactual"]= $anioactual["id"] ;
             $data["personas"]=$this->sqldata($sqlusuario);
             $data["solicitante"]=$this->sqldata($sqlsolicitante);
+            $data["localidaddestino"]=$this->sqldata($sqllocalidaddestino);
             $this->gotoSuccessData($data); 
  
         }
