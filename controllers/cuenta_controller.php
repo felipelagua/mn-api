@@ -4,7 +4,6 @@ class cuenta extends Controller{
         parent::__construct();
         parent::usingData("DCuenta");
         parent::usingEntity("ECuenta");
-        parent::usingEntity("ECuentaDto");
         parent::usingEntity("ECuentaDetalle");
         parent::usingEntity("ECuentaTransferir");
         parent::usingValidate("VCuenta");

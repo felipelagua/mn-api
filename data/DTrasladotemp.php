@@ -187,7 +187,7 @@
         
             $hoy=now();
             $sql=" select a.id,a.localidaddestinoid,a.solicitadoporid,a.comentario,b.nombre as localidaddestino_nombre,
-            (SELECT ifnull(max(cast(numero AS INT)),0)+1 from traslado) as numero,
+            (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from traslado) as numero,
             c.nombre as localidad_nombre
              from ".$this->table." as a 
              inner join localidad as b on b.id=a.localidaddestinoid

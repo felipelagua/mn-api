@@ -308,7 +308,7 @@ class Model{
    
         $dt = $this->db->reader($sql);
         if(count($dt)==0){
-            $this->gotoError("No es un registro válido");
+            $this->gotoError("No es un registro válido ");
         }
         else{
 

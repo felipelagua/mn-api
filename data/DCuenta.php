@@ -12,6 +12,9 @@
                 $det->monto=$o->saldo_inicial;
                 $det->saldo=$o->saldo_inicial;
     
+                if($o->cuentacierreid=="X"){
+                    $o->cuentacierreid="";
+                }
                 $sqlCrearCuenta=$this->sqlInsert($this->table,$o);
                 $sqlInsertarDetalle=$this->sqlInsert("cuenta_detalle",$det); 
                 $sqlActualizarSaldo=$this->sqlUpdateSum($this->table,$o->id,"saldo",$det->monto);
@@ -25,11 +28,15 @@
         }
         private function actualizar($o){
             $hoy=now();
+            if($o->cuentacierreid=="X"){
+                $o->cuentacierreid="";
+            }
             $sql="update cuenta set 
             nombre='$o->nombre',
             venta='$o->venta',
             usuarioid='$o->usuarioid',
             formapagoid='$o->formapagoid',
+            cuentacierreid='$o->cuentacierreid',
             fecha_hora_modificacion=$hoy
             where id='$o->id'";
             $this->db->execute($sql);
@@ -58,7 +65,8 @@
         }
         public function obtener($o){
             $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.usuarioid,a.formapagoid,
-            c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta
+            c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta,
+            case when a.cuentacierreid=null || a.cuentacierreid='' then 'X' else a.cuentacierreid end as cuentacierreid
             from cuenta as a
             inner join usuario as b on b.id=a.usuarioid
             inner join formapago as c on c.id = a.formapagoid
@@ -72,9 +80,14 @@
             from formapago where activo=1 
             order by nombre";
 
+            $sqlcuenta="select id,nombre
+            from cuenta where activo=1 
+            order by nombre";
+
             $data["ent"]=$this->sqlgetrow($sql);
             $data["personas"]=$this->sqldata($sqlusuario);
             $data["formapago"]=$this->sqldata($sqlformapago);
+            $data["cuentas"]=$this->sqldata($sqlcuenta);
             $this->gotoSuccessData($data);
         }
         public function registrarMovimiento($o){
@@ -135,8 +148,13 @@
             from formapago where activo=1 
             order by nombre";
 
+            $sqlcuenta="select id,nombre
+            from cuenta where activo=1 
+            order by nombre";
+
             $data["personas"]=$this->sqldata($sqlusuario);
             $data["formapago"]=$this->sqldata($sqlformapago);
+            $data["cuentas"]=$this->sqldata($sqlcuenta);
             $this->gotoSuccessData($data);
         }
         public function obtenerListasTransferir(){

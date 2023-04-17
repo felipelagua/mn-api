@@ -141,7 +141,7 @@
         
             $hoy=now();
             $sql=" select a.id,a.motivoingresoid,a.comentario,b.nombre as motivoingreso_nombre,
-            (SELECT ifnull(max(cast(numero AS INT)),0)+1 from notaingreso) as numero
+            (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from notaingreso) as numero
              from ".$this->table." as a 
              inner join motivoingreso as b on b.id=a.motivoingresoid
              where a.localidadid='$localidadid' 
