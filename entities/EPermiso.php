@@ -3,6 +3,7 @@
         public $id;
         public $codigo;
         public $nombre;
+        public $clave;
         public $url;
         public $icono;
  

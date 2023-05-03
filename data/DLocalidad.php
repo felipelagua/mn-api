@@ -12,7 +12,7 @@
             $this->sqlread($sql);
         }
         public function obtener($o){
-            $sql=" select id,nombre,direccion from ".$this->table." where id='@id' and activo=1";
+            $sql=" select id,nombre,direccion,venta from ".$this->table." where id='@id' and activo=1";
             $this->sqlGet($sql,$o->id);
         }
     }

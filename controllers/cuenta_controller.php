@@ -12,6 +12,7 @@ class cuenta extends Controller{
     }
 
     public function registrar(){
+        http::role(CUENTA);
         http::put();
         $input=input();
         $o=new ECuenta($input);
@@ -21,6 +22,7 @@ class cuenta extends Controller{
         $d->registrar($o);
     }
     public function registrarMovimiento(){
+        http::role(CUENTA);
         http::put();
         $input=input();
         $o=new ECuentaDetalle($input);
@@ -32,6 +34,7 @@ class cuenta extends Controller{
     }
 
     public function eliminar(){
+        http::role(CUENTA);
         http::delete();
         $input=input();
         $user=new ECuenta($input);
@@ -39,36 +42,29 @@ class cuenta extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(CUENTA);
         http::post();
+        $o=new ECuenta(input());
         $d=new DCuenta();
-        $d->listar();
+        $d->listar($o);
     }
     public function obtener(){
+        http::role(CUENTA);
         http::post();
         $input=input();
         $o=new ECuenta($input);
         $d=new DCuenta();
         $d->obtener($o);
     }
-    public function transferir(){
-        http::put();
-        $o=new ECuentaTransferir();
-        $v=new VCuentaTransferir();
-        $v->validate($o);
-        $d=new DCuenta();
-        $d->transferir($o);
-    }
     public function obtenerListas(){
+        http::role(CUENTA);
         http::post();
         $d=new DCuenta();
         $d->obtenerListas();
     }
-    public function obtenerListasTransferir(){
-        http::post();
-        $d=new DCuenta();
-        $d->obtenerListasTransferir();
-    }
+
     public function obtenerDetalle(){
+        http::role(CUENTA);
         http::post();
         $input=input();
         $o=new ECuenta($input);
@@ -76,9 +72,26 @@ class cuenta extends Controller{
         $d->obtenerDetalle($o);
     }
     public function obtenerListasMov(){
+        http::role(CUENTA);
         http::post();
         $d=new DCuenta();
         $d->obtenerListasMov();
+    }
+    public function transferir(){
+        http::role(TRANSFERIR);
+        http::put();
+        $o=new ECuentaTransferir();
+        $v=new VCuentaTransferir();
+        $v->validate($o);
+        $d=new DCuenta();
+        $d->transferir($o);
+    }
+
+    public function obtenerListasTransferir(){
+        http::role(TRANSFERIR);
+        http::post();
+        $d=new DCuenta();
+        $d->obtenerListasTransferir();
     }
 }
 

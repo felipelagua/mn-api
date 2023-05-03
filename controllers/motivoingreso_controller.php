@@ -8,9 +8,9 @@ class Motivoingreso extends Controller{
     }
 
     public function registrar(){
+        http::role(MOTIVO_INGRESO);
         http::put();
         $input=input();
-        
         $o=new EMotivoingreso($input);
         $v=new VMotivoingreso();
         $v->validate($o);
@@ -19,6 +19,7 @@ class Motivoingreso extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
+        http::role(MOTIVO_INGRESO);
         http::delete();
         $input=input();
         $user=new EMotivoingreso($input);
@@ -26,6 +27,7 @@ class Motivoingreso extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(MOTIVO_INGRESO);
         http::post();
         $input=input();
         $o=new EMotivoingreso($input);
@@ -33,6 +35,7 @@ class Motivoingreso extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(MOTIVO_INGRESO);
         http::post();
         $input=input();
         $o=new EMotivoingreso($input);

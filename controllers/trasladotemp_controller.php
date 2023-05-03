@@ -10,7 +10,7 @@ class Trasladotemp extends Controller{
     }
 
     public function registrar(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::put();
         $input=input();
         $o=new ETrasladotemp($input);
@@ -19,19 +19,19 @@ class Trasladotemp extends Controller{
     }
  
     public function obtener(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::post();
         $d=new DTrasladotemp();
         $d->obtener();
     }
     public function listarDetalle(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::post();
         $d=new DTrasladotemp();
         $d->listarDetalle();
     }
     public function buscarProducto(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -39,7 +39,7 @@ class Trasladotemp extends Controller{
         $d->buscarProducto($o);
     }
     public function registrarDetalle(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::put();
         $input=input();
         $o=new ETrasladoDetalle($input);
@@ -49,7 +49,7 @@ class Trasladotemp extends Controller{
         $d->registrarDetalle($o);
     }
     public function eliminarDetalle(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::delete();
         $input=input();
         $o=new ETrasladoDetalle($input); 
@@ -57,7 +57,7 @@ class Trasladotemp extends Controller{
         $d->eliminarDetalle($o);
     }
     public function finalizar(){
-        http::role(Almacen_Nueva_Salida);
+        http::role(NUEVO_TRASLADO);
         http::put();
         $d=new DTrasladotemp();
         $d->finalizar();

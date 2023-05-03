@@ -9,6 +9,7 @@ class usuario extends Controller{
     }
 
     public function registrar(){
+        http::role(USUARIO);
         http::put();
         $input=input();
         $o=new EUsuario($input);
@@ -19,6 +20,7 @@ class usuario extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
+        http::role(USUARIO);
         http::delete();
         $input=input();
         $user=new EUsuario($input);
@@ -26,6 +28,7 @@ class usuario extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(USUARIO);
         http::post();
         $input=input();
         $o=new EUsuario($input);
@@ -33,6 +36,7 @@ class usuario extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(USUARIO);
         http::post();
         $input=input();
         $o=new EUsuario($input);
@@ -40,6 +44,7 @@ class usuario extends Controller{
         $d->obtener($o);
     }
     public function registrarAcceso(){
+        http::role(USUARIO);
         http::put();
         $input=input();
         $o=new EUsuarioacceso($input);
@@ -47,6 +52,7 @@ class usuario extends Controller{
         $d->registrarAcceso($o);
     }
     public function eliminarAcceso(){
+        http::role(USUARIO);
         http::delete();
         $input=input();
         $o=new EUsuarioacceso($input);
@@ -54,6 +60,7 @@ class usuario extends Controller{
         $d->eliminarAcceso($o);
     }
     public function listarAcceso(){
+        http::role(USUARIO);
         http::post();
         $input=input();
         $o=new EUsuario($input);

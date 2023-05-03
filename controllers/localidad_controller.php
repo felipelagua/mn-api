@@ -8,7 +8,7 @@ class localidad extends Controller{
     }
 
     public function registrar(){
-        http::role(Sistema_Locales);
+        http::role(LOCAL);
         http::put();
         $input=input();
         $o=new ELocalidad($input);
@@ -19,7 +19,7 @@ class localidad extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
-        http::role(Sistema_Locales);
+        http::role(LOCAL);
         http::delete();
         $input=input();
         $user=new ELocalidad($input);
@@ -27,7 +27,7 @@ class localidad extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
-        http::role(Sistema_Locales);
+        http::role(LOCAL);
         http::post();
         $input=input();
         $o=new ELocalidad($input);
@@ -35,7 +35,7 @@ class localidad extends Controller{
         $d->listar($o);
     }
     public function obtener(){
-        http::role(Sistema_Locales);
+        http::role(LOCAL);
         http::post();
         $input=input();
         $o=new ELocalidad($input);

@@ -7,6 +7,7 @@ class notasalida extends Controller{
     }
 
     public function listar(){
+        http::role(NOTA_SALIDA);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -14,6 +15,7 @@ class notasalida extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(NOTA_SALIDA);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -21,6 +23,7 @@ class notasalida extends Controller{
         $d->obtener($o);
     }
     public function obtenerFiltros(){
+        http::role(NOTA_SALIDA);
         http::post();
         $d=new DNotasalida();
         $d->obtenerFiltros();

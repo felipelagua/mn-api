@@ -8,7 +8,7 @@ class permiso extends Controller{
     }
 
     public function registrar(){
-        http::role(Sistema_Permisos);
+        http::role(PERMISO);
         http::put();
         $input=input();
         $o=new EPermiso($input);
@@ -19,7 +19,7 @@ class permiso extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
-        http::role(Sistema_Permisos);
+        http::role(PERMISO);
         http::delete();
         $input=input();
         $user=new EPermiso($input);
@@ -27,7 +27,7 @@ class permiso extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
-        http::role(Sistema_Permisos);
+        http::role(PERMISO);
         http::post();
         $input=input();
         $o=new EPermiso($input);
@@ -35,7 +35,7 @@ class permiso extends Controller{
         $d->listar($o);
     }
     public function obtener(){
-        http::role(Sistema_Permisos);
+        http::role(PERMISO);
         http::post();
         $input=input();
         $o=new EPermiso($input);

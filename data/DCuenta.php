@@ -54,22 +54,25 @@
         public function eliminar($o){
             $this->delete($this->table,$o);
         }
-        public function listar(){
+        public function listar($o){
            $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.venta,
            c.nombre as formapago_nombre,a.saldo,date_format(a.fecha_hora_modificacion,'%d/%m/%Y %H:%i') as fecha_hora
            from cuenta as a
            inner join usuario as b on b.id=a.usuarioid
            inner join formapago as c on c.id = a.formapagoid
-           where a.activo=1";
+           where a.activo=1
+           and ('$o->nombre'='' or a.nombre like concat('%','$o->nombre','%'))";
            $this->sqlread($sql);
         }
         public function obtener($o){
             $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.usuarioid,a.formapagoid,
             c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta,
-            case when a.cuentacierreid=null || a.cuentacierreid='' then 'X' else a.cuentacierreid end as cuentacierreid
+            case when a.cuentacierreid=null || a.cuentacierreid='' then 'X' else a.cuentacierreid end as cuentacierreid,
+            ifnull(d.nombre,'') as cuentadestino_nombre
             from cuenta as a
             inner join usuario as b on b.id=a.usuarioid
             inner join formapago as c on c.id = a.formapagoid
+            left join cuenta as d on d.id=a.cuentacierreid
             where a.id='$o->id' and a.activo=1";
 
             $sqlusuario="select id,nombre

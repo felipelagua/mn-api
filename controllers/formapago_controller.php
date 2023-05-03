@@ -8,9 +8,9 @@ class Formapago extends Controller{
     }
 
     public function registrar(){
+        http::role(FORMA_PAGO);
         http::put();
         $input=input();
-        
         $o=new EFormapago($input);
         $v=new VFormapago();
         $v->validate($o);
@@ -19,6 +19,7 @@ class Formapago extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
+        http::role(FORMA_PAGO);
         http::delete();
         $input=input();
         $user=new EFormapago($input);
@@ -26,6 +27,7 @@ class Formapago extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(FORMA_PAGO);
         http::post();
         $input=input();
         $o=new EFormapago($input);
@@ -33,6 +35,7 @@ class Formapago extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(FORMA_PAGO);
         http::post();
         $input=input();
         $o=new EFormapago($input);

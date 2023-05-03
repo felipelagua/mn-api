@@ -6,8 +6,8 @@ class notaingreso extends Controller{
         parent::usingEntity("EFiltro");
     }
 
-
     public function listar(){
+        http::role(NOTA_INGRESO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -15,6 +15,7 @@ class notaingreso extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(NOTA_INGRESO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -22,10 +23,10 @@ class notaingreso extends Controller{
         $d->obtener($o);
     }
     public function obtenerFiltros(){
+        http::role(NOTA_INGRESO);
         http::post();
         $d=new DNotaingreso();
         $d->obtenerFiltros();
     }
 }
-
 ?>

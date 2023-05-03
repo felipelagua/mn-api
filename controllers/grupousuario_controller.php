@@ -9,7 +9,7 @@ class Grupousuario extends Controller{
     }
 
     public function registrar(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::put();
         $input=input();        
         $o=new EGrupousuario($input);
@@ -20,7 +20,7 @@ class Grupousuario extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::delete();
         $input=input();
         $user=new EGrupousuario($input);
@@ -28,7 +28,7 @@ class Grupousuario extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::post();
         $input=input();
         $o=new EGrupousuario($input);
@@ -36,7 +36,7 @@ class Grupousuario extends Controller{
         $d->listar($o);
     }
     public function obtener(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::post();
         $input=input();
         $o=new EGrupousuario($input);
@@ -44,7 +44,7 @@ class Grupousuario extends Controller{
         $d->obtener($o);
     }
     public function obtenerAcceso(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::post();
         $input=input();
         $o=new EGrupousuario($input);
@@ -52,7 +52,7 @@ class Grupousuario extends Controller{
         $d->obtenerAcceso($o);
     }
     public function modificarAcceso(){
-        http::role(Sistema_Perfiles);
+        http::role(PERFIL);
         http::put();
         $input=input();      
         $o=new EGrupousuarioacceso($input);

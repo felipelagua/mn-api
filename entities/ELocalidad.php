@@ -3,7 +3,7 @@
         public $id;
         public $nombre;
         public $direccion;
- 
+        public $venta;
         public function __construct($input) {  
             $this->set($input);
             if(!isset($this->id)){

@@ -5,6 +5,7 @@
         public function aperturar($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
+            $this->validarLocal();
             $o->id=guid();
             $o->saldo=0;
             $o->estado="A";
@@ -56,7 +57,25 @@
             }
             return $state;
         }
-
+        private function validarLocal(){
+            $localidadid=auth::local();
+            $sql="SELECT a.id,ifnull(a.venta,'') as venta
+            FROM localidad AS a
+            WHERE a.id='$localidadid'
+            AND a.activo=1 ";
+            $dt=$this->sqldata($sql);
+            if(count($dt)==0){
+                $message="El local no es válido";
+                $this->gotoError($message);
+            }
+            else{
+                $row=$dt[0];
+                if($row["venta"]!="SI"){
+                    $message="El local no es un Punto de Venta";
+                    $this->gotoError($message);
+                }
+            }
+        }
         private function cuentaCaja(){
             $usuarioid=auth::user();
             $sql="SELECT a.id,a.saldo,a.nombre,a.cuentacierreid
@@ -108,6 +127,7 @@
         }  
  
         public function obtener($o){
+            $this->validarLocal();
             $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.usuarioid,a.formapagoid,
             c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta
             from caja as a
@@ -129,6 +149,7 @@
             $this->gotoSuccessData($data);
         }
         public function obtenerDatosApertura(){
+            $this->validarLocal();
           if($this->existe()){
             $message="La caja se encuentra activa";
             $dt = $this->obtenerCajaAbierta();
@@ -139,7 +160,7 @@
           }
 
             $saldoreserva=$this->obtenerSaldoReserva();
-              $row=$this->cuentaCaja();
+            $row=$this->cuentaCaja();
             $row["estado_nombre"]="CAJA CERRADA";
             $row["estado"]="C";
 
@@ -171,6 +192,7 @@
         }  
 
         public function obtenerDatosReserva(){
+            $this->validarLocal();
              $dt = $this->obtenerCajaAbierta();
 
              if(count($dt)>0){
@@ -196,6 +218,7 @@
         }
 
         public function reservar($o){
+            $this->validarLocal();
             $localidadid=auth::local();
             $usuarioid=auth::user();
             $dt = $this->obtenerCajaAbierta();
@@ -244,6 +267,12 @@
 
     
         public function obtenerDetalle(){
+            $this->validarLocal();
+            $dt= $this->obtenerCajaAbierta();
+             if(count($dt)==0){
+                $message="La caja no se encuentra abierta";
+                $this->gotoError($message);
+             }
             $usuarioid=auth::user();
             $localidadid=auth::local();
             $sql=  $sql="SELECT a.id,a.saldo,b.nombre as localidad_nombre,date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_ini,
@@ -269,6 +298,12 @@
             $this->gotoSuccessData($data);
         }
         public function obtenerPreCierre(){
+            $dt= $this->obtenerCajaAbierta();
+             if(count($dt)==0){
+                $message="La caja no se encuentra abierta";
+                $this->gotoError($message);
+             }
+            $this->validarLocal();
             $usuarioid=auth::user();
             $localidadid=auth::local();
             $sql=  $sql="SELECT a.id,a.saldo,b.nombre as localidad_nombre,date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_ini,

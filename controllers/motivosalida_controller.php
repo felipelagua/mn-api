@@ -8,9 +8,9 @@ class Motivosalida extends Controller{
     }
 
     public function registrar(){
+        http::role(MOTIVO_SALIDA);
         http::put();
-        $input=input();
-        
+        $input=input();      
         $o=new EMotivosalida($input);
         $v=new VMotivosalida();
         $v->validate($o);
@@ -19,6 +19,7 @@ class Motivosalida extends Controller{
         $d->registrar($o);
     }
     public function eliminar(){
+        http::role(MOTIVO_SALIDA);
         http::delete();
         $input=input();
         $user=new EMotivosalida($input);
@@ -26,6 +27,7 @@ class Motivosalida extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(MOTIVO_SALIDA);
         http::post();
         $input=input();
         $o=new EMotivosalida($input);
@@ -33,6 +35,7 @@ class Motivosalida extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(MOTIVO_SALIDA);
         http::post();
         $input=input();
         $o=new EMotivosalida($input);

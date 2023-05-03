@@ -8,17 +8,17 @@ class proveedor extends Controller{
     }
 
     public function registrar(){
+        http::role(PROVEEDOR);
         http::put();
-        $input=input();
-        
+        $input=input();      
         $o=new EProveedor($input);
         $v=new VProveedor();
         $v->validate($o);
         $d=new DProveedor();
-
         $d->registrar($o);
     }
     public function eliminar(){
+        http::role(PROVEEDOR);
         http::delete();
         $input=input();
         $user=new EProveedor($input);
@@ -26,6 +26,7 @@ class proveedor extends Controller{
         $d->eliminar($user);
     }
     public function listar(){
+        http::role(PROVEEDOR);
         http::post();
         $input=input();
         $o=new EProveedor($input);
@@ -33,6 +34,7 @@ class proveedor extends Controller{
         $d->listar($o);
     }
     public function obtener(){
+        http::role(PROVEEDOR);
         http::post();
         $input=input();
         $o=new EProveedor($input);

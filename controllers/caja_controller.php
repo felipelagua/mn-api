@@ -12,6 +12,7 @@ class Caja extends Controller{
     }
 
     public function aperturar(){
+        http::role(CAJA_APERTURA);
         http::put();
         $input=input();
         $o=new ECaja($input);
@@ -21,6 +22,7 @@ class Caja extends Controller{
         $d->aperturar($o);
     }
     public function registrarMovimiento(){
+        http::role(CAJA_APERTURA);
         http::put();
         $input=input();
         $o=new ECajaDetalle($input);
@@ -32,6 +34,7 @@ class Caja extends Controller{
     }
  
     public function obtener(){
+        http::role(CAJA_APERTURA);
         http::post();
         $input=input();
         $o=new ECaja($input);
@@ -39,10 +42,12 @@ class Caja extends Controller{
         $d->obtener($o);
     }
     public function obtenerDatosApertura(){
+        http::role(CAJA_APERTURA);
         $d=new DCaja();
         $d->obtenerDatosApertura();
     }
     public function obtenerDetalle(){
+        http::role(CAJA_DETALLE);
         http::post();
         $input=input();
         $o=new ECaja($input);
@@ -50,10 +55,12 @@ class Caja extends Controller{
         $d->obtenerDetalle($o);
     }
     public function obtenerDatosReserva(){
+        http::role(CAJA_RESERVA);
         $d=new DCaja();
         $d->obtenerDatosReserva();
     }
     public function reservar(){
+        http::role(CAJA_RESERVA);
         http::put();
         $input=input();
         $o=new ECajaDetalle($input);
@@ -61,10 +68,12 @@ class Caja extends Controller{
         $d->reservar($o);
     }
     public function obtenerPreCierre(){
+        http::role(CAJA_CIERRE);
         $d=new DCaja();
         $d->obtenerPreCierre();
     }
     public function finalizar(){
+        http::role(CAJA_CIERRE);
         http::put();
         $d=new DCaja();
         $d->finalizar();

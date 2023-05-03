@@ -13,7 +13,7 @@ class notaingresotemp extends Controller{
     }
 
     public function registrar(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::put();
         $input=input();
         $o=new ENotaingresotemp($input);
@@ -22,19 +22,19 @@ class notaingresotemp extends Controller{
     }
  
     public function obtener(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::post();
         $d=new DNotaingresotemp();
         $d->obtener();
     }
     public function listarDetalle(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::post();
         $d=new DNotaingresotemp();
         $d->listarDetalle();
     }
     public function buscarProducto(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -42,7 +42,7 @@ class notaingresotemp extends Controller{
         $d->buscarProducto($o);
     }
     public function registrarDetalle(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::put();
         $input=input();
         $o=new ENotaingresoDetalle($input);
@@ -52,7 +52,7 @@ class notaingresotemp extends Controller{
         $d->registrarDetalle($o);
     }
     public function eliminarDetalle(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::delete();
         $input=input();
         $o=new ENotaingresoDetalle($input); 
@@ -60,7 +60,7 @@ class notaingresotemp extends Controller{
         $d->eliminarDetalle($o);
     }
     public function finalizar(){
-        http::role(Almacen_Nuevo_Ingreso);
+        http::role(NUEVO_INGRESO);
         http::put();
         $d=new DNotaingresotemp();
         $d->finalizar();
