@@ -1,19 +1,19 @@
 <?php
+usingdb("stock");
+usingdb("localidad");
     class DStock extends Model{
  
         public function listar($o){
-            $localidadid=auth::local();
-            $sql="SELECT b.id,b.nombre,convert(a.cantidad,decimal(10,0)) as cantidad
-            FROM localidad_producto AS a
-            INNER JOIN producto AS b ON b.id=a.productoid
-            WHERE a.localidadid = '$localidadid'
-            AND a.activo=1
-            AND b.activo=1
-            and b.nombre like  '%".$o->nombre."%'
-            ORDER BY b.nombre";
-
-            $this->sqlread($sql);
+            $localidadid=auth::local();            
+            $sql=db_stock_listar($localidadid,$o->nombre);
+            return $this->sqldata($sql);
         }
+
+        public function obtenerLocalidad($localidadid){                       
+            $sql=db_localidad_obtener($localidadid);
+            return $this->sqlrow($sql);
+        }
+        
         public function obtener($o){
             $localidadid=auth::local();
 
@@ -38,5 +38,6 @@
             $data["detalle"]=$this->sqldata($sqldet);
             $this->gotoSuccessData($data);
         }
+        
     }
 ?>

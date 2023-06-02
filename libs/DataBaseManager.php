@@ -62,6 +62,32 @@ class DataBaseManager{
             $this->gotoError($ex->getMessage());
         }
     }
+    public function transacx($arrasql){
+        $this->open();
+        try{          
+            $this->dbh->beginTransaction();
+
+            foreach($arrasql as $sql){
+                $stmt = $this->dbh->prepare($sql);
+                $stmt->execute();
+            }
+
+            if ($this->dbh->inTransaction()) {
+                $this->dbh->commit();
+            }
+            $this->close();
+ 
+        }
+        catch(PDOException $ex){
+            $this->dbh->rollBack();
+            $this->close();
+            $this->gotoError($ex->getMessage());
+        }
+        catch(Exception $ex){
+            $this->close();
+            $this->gotoError($ex->getMessage());
+        }
+    }
     public function transacm($arrasql,$message){
         $this->open();
         try{          

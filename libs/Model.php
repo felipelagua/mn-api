@@ -18,6 +18,13 @@ function guid(){
         return strtolower($uuid);
     }
 }
+
+function usingdb($db){
+    $path="db/db".$db.".php";
+    if(file_exists($path)){
+        include($path); 
+    }
+}
 class Model{
     protected $db;
 
@@ -206,6 +213,15 @@ class Model{
         }
    }
    function sqlgetrow( $sql){
+        $dt=$this->db->reader($sql);
+        if(count($dt)>0){
+            return $dt[0];
+        }
+        else{
+            return null;
+        }
+    }
+    function sqlrow( $sql){
         $dt=$this->db->reader($sql);
         if(count($dt)>0){
             return $dt[0];

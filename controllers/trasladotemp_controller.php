@@ -62,6 +62,20 @@ class Trasladotemp extends Controller{
         $d=new DTrasladotemp();
         $d->finalizar();
     }
+    public function asignarPedido(){
+        http::role(NUEVO_TRASLADO);
+        http::put();
+        $input=input();
+        $o=new ETrasladotemp($input);
+        $d=new DTrasladotemp();
+        $d->asignarPedido($o);
+    }
+    public function quitarPedido(){
+        http::role(NUEVO_TRASLADO);
+        http::put();
+        $d=new DTrasladotemp();
+        $d->quitarPedido();
+    }
 }
 
 ?>

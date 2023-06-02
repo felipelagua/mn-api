@@ -46,6 +46,10 @@ define("COMPRA_DESTINO","e9513686-fbcb-b52e-4723-d17456607c83");
 define("PRODUCCION","e9513686-fbcb-b52e-4723-d17456607c83");
 define("NUEVO_PEDIDO_COMPRA","476a33b8-97c4-8c4f-9845-5e2cc5e1393b");
 define("PEDIDO_COMPRA","1a515fca-ab70-a039-4da7-5a7a6b1b1427");
+define("PEDIDO_COMPRA_TOMA","6ebe48e3-da85-63b2-9331-0314f6a92d4a");
+define("TIPO_PEDIDO","4f8591f7-300a-edd0-1006-f37345657e13");
 
-
+define("PARA_LLEVAR","LLEV");
+define("DELIVERY","DELI");
+define("EN_MESA","MESA");
 ?>

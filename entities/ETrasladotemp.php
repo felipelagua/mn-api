@@ -3,7 +3,9 @@
         public $id;
         public $localidaddestinoid;
         public $solicitadoporid;
+        public $pedidocompraid;
         public $comentario;
+        public $pedidocompra_numero;
 
         public function __construct($input) { 
             if($input!=null){

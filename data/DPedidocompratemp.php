@@ -58,13 +58,12 @@
         public function buscarProducto($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=" select id as productoid,nombre as descripcion,1 as cantidad 
+            $sql=" select id as productoid,nombre as descripcion,1 as cantidad,stock
             from producto 
              where activo=1 
-             and terminado='SI'
+             and compra='SI'
              and not id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid')
-             and id in (select productoid from producto_insumo where activo=1)
+             where localidadid='$localidadid' and usuario_creacion='$usuarioid') 
              and nombre like  '%".$o->nombre."%'
              order by fecha_hora_creacion desc";
               $this->sqlread($sql);
@@ -163,8 +162,8 @@
             $id=Guid();
 
              $sql=" 
-             insert into Pedidocompra(id,numero,localidadid, activo,usuario_creacion,fecha_hora_creacion)
-             select '$id','".$cab["numero"]."','$localidadid',1,'$usuarioid',$hoy ";
+             insert into Pedidocompra(id,numero,localidadid,estado, activo,usuario_creacion,fecha_hora_creacion)
+             select '$id','".$cab["numero"]."','$localidadid','REG',1,'$usuarioid',$hoy ";
 
              $array = array($sql);
                 $correlativo=1;
@@ -267,7 +266,6 @@
              $this->db->transacm($array,"Se generó un lote de producción N° ".$cab["numero"]);
         }
         function validarFinalizar($dtcab,$dtdet){
-            $localidadid=auth::local();
             $details = array();
             if(count($dtcab)==0){
                 array_push($details,"No hay una nota de ingreso pendiente para grabar");
@@ -276,31 +274,7 @@
             if(count($dtdet)==0){
                 array_push($details,"Debe haber por lo menos un producto");
             }
-            else{
-                foreach($dtdet as $det){
-                    $productoid = $det["productoid"];
-                    $sqldes="SELECT a.itemid, a.cantidad,  b.nombre,
-                    case when c.id is null then 'N' else 'S' end as locprod,
-                    case when c.cantidad is null then 0 else c.cantidad end as stock_actual,
-                    b.stock,ifnull(c.precio,0.00) as precio_stock
-                    FROM producto_insumo AS a
-                    INNER JOIN producto AS b ON b.id=a.itemid
-                    left join localidad_producto as c on c.productoid=a.itemid and c.localidadid='$localidadid'
-                    WHERE a.productoid='$productoid' and a.activo=1";
-
-                    $dtdes=$this->sqldata($sqldes);
-                    if(count($dtdes)==0){
-                        array_push($details,$det["descripcion"]." debe tener insumos relacionados");
-                    }
-                    else{
-                        foreach($dtdes as $des){
-                            if($des["stock"]=="SI" && $des["stock_actual"]<$des["cantidad"]){
-                                array_push($details,$des["nombre"]." con stock = ".$des["stock_actual"]." debe tener stock suficiente para ".$det["cantidad"]." de ".$det["descripcion"]);
-                            }
-                        }
-                    }
-                }
-            }
+    
             if(count($details)){
                 $this->gotoErrorDetails("Ocurrieron algunos errores",$details); 
             }

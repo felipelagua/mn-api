@@ -12,7 +12,8 @@ class stock extends Controller{
         $input=input();
         $o=new EFiltro($input);
         $d=new DStock();
-        $d->listar($o);
+        $result = $d->listar($o);
+        ok($result);
     }
     public function obtener(){
         http::role(STOCK);
@@ -21,6 +22,27 @@ class stock extends Controller{
         $o=new EFiltro($input);
         $d=new DStock();
         $d->obtener($o);
+    }
+    public function pdf(){
+        http::role(STOCK);
+        http::post();
+        $input=input();
+        $localidadid=auth::local();
+        $o=new EFiltro($input);
+        $d=new DStock();
+
+        $data = $d->listar($o);
+        $loc = $d->obtenerLocalidad($localidadid);
+        $pdf = new PDF();
+        $pdf->setTitle("STOCK DE ALMACEN");
+        $pdf->setLocal($loc["nombre"]);
+
+        $head = array('PRODUCTO', 'STOCK','STOCK FISICO');
+        $align=array('L', 'R','R');
+        $field = array('nombre', 'cantidad','');
+        $width= array(130,30,30);
+        $pdf->setTable($data,$head,$field,$align,$width);
+        $pdf->download("stock");
     }
  
 }

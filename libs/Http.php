@@ -41,5 +41,23 @@ class http{
         echo json_encode($result);
         exit();
     }
+    static function gotoSuccess($data){
+        $result=new Result();
+        $result->success=true;
+        $result->status=200;
+        $result->data= $data;
+        echo json_encode($result);
+        exit();
+    }
+ 
+}
+
+function ok($result){
+    $res=new Result();
+    $res->success=true;
+    $res->status=200;
+    $res->data= $result;
+    echo json_encode($res);
+    exit();
 }
 ?>

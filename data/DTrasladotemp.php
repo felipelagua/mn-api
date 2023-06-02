@@ -8,13 +8,17 @@
 
             $sqllocalidad="select id,nombre from localidad where activo=1 and id!='$localidadid' order by nombre";
             $sqlusuario="select id,nombre from usuario where activo=1 and id!='$usuarioid' order by nombre";
-            $sql=" select id,localidaddestinoid,solicitadoporid,comentario
-             from ".$this->table." 
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1";
 
-             $sqldet=" select id,productoid,descripcion,cantidad
+            $sql=" select a.id,case when a.localidaddestinoid='' then 'X' else a.localidaddestinoid end as localidaddestinoid,
+            a.solicitadoporid,a.comentario,ifnull(a.pedidocompraid,'') as pedidocompraid,
+            ifnull(b.numero,'') as pedidocompra_numero
+             from ".$this->table." as a
+             left join pedidocompra as b on b.id=a.pedidocompraid
+             where a.localidadid='$localidadid' 
+             and a.usuario_creacion='$usuarioid'
+             and a.activo=1";
+
+             $sqldet=" select id,productoid,descripcion,cantidad,ifnull(pedido,'') as pedido
              from ".$this->table."_detalle
              where localidadid='$localidadid' 
              and usuario_creacion='$usuarioid'
@@ -89,7 +93,7 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
-             $sqldet=" select id,productoid,descripcion,cantidad
+             $sqldet=" select id,productoid,descripcion,cantidad,ifnull(pedido,'') as pedido  
              from ".$this->table."_detalle
              where localidadid='$localidadid' 
              and usuario_creacion='$usuarioid'
@@ -171,6 +175,19 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
+            $sql="select id,pedido from ".$this->table."_detalle 
+            where productoid='$o->productoid' 
+            and localidadid='$localidadid'
+            and usuario_creacion='$usuarioid'
+            and activo=1 ";
+            $dt=$this->sqldata($sql);
+
+            if(count($dt)>0){
+                $pedido=$dt[0]["pedido"];
+                if($pedido=="SI"){
+                    $this->gotoError("No se puede eliminar el registro porque esta asociado al pedido asignado");
+                }
+            }
              $sqldet=" delete
              from ".$this->table."_detalle
              where localidadid='$localidadid'
@@ -180,7 +197,54 @@
              $this->db->execute($sqldet);
             $this->gotoSuccess("Se eliminó correctamente",$o->id); 
         }
+        public function asignarPedido($o){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
 
+             $sql=" update trasladotemp
+             set pedidocompraid='$o->pedidocompraid'
+             where localidadid='$localidadid' and activo=1
+             and usuario_creacion='$usuarioid' ";
+             $array = array($sql);
+
+             $sql=" delete from trasladotemp_detalle
+             where localidadid='$localidadid'
+             and usuario_creacion='$usuarioid' ";
+             array_push($array,$sql);
+
+             $sql="INSERT INTO trasladotemp_detalle(id,localidadid,productoid,descripcion,cantidad,pedido,activo,usuario_creacion,fecha_hora_creacion)
+             SELECT UUID() AS id,'$localidadid' AS localidadid,C.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
+             'SI' AS pedido,1 AS activo,'$usuarioid' AS usuario_creacion,'' AS fecha_hora_creacion
+             FROM pedidocompra_detalle AS a
+             INNER JOIN pedidocompra AS b ON b.id=a.pedidocompraid
+             INNER JOIN producto AS c ON c.id=a.productoid
+             WHERE a.activo=1 AND b.estado='CMP' AND b.toma='SI'
+             and a.localidadid!='$usuarioid'
+             AND b.activo=1
+             GROUP BY c.id,c.nombre
+             ORDER BY c.nombre";
+             array_push($array,$sql);
+             
+            $this->db->transacm($array,"Se asignó el pedido correctamente");
+        }
+        public function quitarPedido(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+
+             $sql=" update trasladotemp
+             set pedidocompraid=''
+             where localidadid='$localidadid' and activo=1 
+             and usuario_creacion='$usuarioid' ";
+             $array = array($sql);
+
+             $sql=" delete from trasladotemp_detalle
+             where localidadid='$localidadid' and pedido='SI'
+             and usuario_creacion='$usuarioid' ";
+             array_push($array,$sql);
+ 
+             
+            $this->db->transacm($array,"Se quitó el pedido correctamente");
+        }
         function finalizar(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
@@ -188,7 +252,7 @@
             $hoy=now();
             $sql=" select a.id,a.localidaddestinoid,a.solicitadoporid,a.comentario,b.nombre as localidaddestino_nombre,
             (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from traslado) as numero,
-            c.nombre as localidad_nombre
+            c.nombre as localidad_nombre,ifnull(a.pedidocompraid,'') as pedidocompraid
              from ".$this->table." as a 
              inner join localidad as b on b.id=a.localidaddestinoid
              INNER JOIN localidad as c on c.id=a.localidadid
@@ -197,8 +261,11 @@
              and a.activo=1";
              $dtcab=$this->sqldata($sql);
              $localidaddestinoid="";
+             $pedidocompraid="";
              if(count($dtcab)>0){
-                $localidaddestinoid=$dtcab[0]["localidaddestinoid"];
+                $rowcab=$dtcab[0];
+                $localidaddestinoid = $rowcab["localidaddestinoid"];
+                $pedidocompraid = $rowcab["pedidocompraid"];
              }
              
 
@@ -223,12 +290,23 @@
             $cab=$dtcab[0];
             $id=Guid();
             $estado="REGISTRADO";
-             $sql=" 
-             insert into traslado(id,numero,localidadid,localidaddestinoid,solicitadoporid,comentario,estado,activo,usuario_creacion,fecha_hora_creacion)
-             select '$id','".$cab["numero"]."','$localidadid','".$cab["localidaddestinoid"]."','".$cab["solicitadoporid"]."','$estado','".$cab["comentario"]."',1,'$usuarioid',$hoy ";
 
+
+             $sql=" 
+             insert into traslado(id,numero,localidadid,pedidocompraid,localidaddestinoid,solicitadoporid,comentario,estado,activo,usuario_creacion,fecha_hora_creacion)
+             select '$id','".$cab["numero"]."','$localidadid','$pedidocompraid','".$cab["localidaddestinoid"]."','".$cab["solicitadoporid"]."','$estado','".$cab["comentario"]."',1,'$usuarioid',$hoy ";
              $array = array($sql);
-                $correlativo=1;
+
+             if($pedidocompraid!=""){
+                $sql="update pedidocompra
+                set estado='ATE',
+                usuario_modificacion = '$usuarioid',
+                fecha_hora_creacion = $hoy
+                where id = '$pedidocompraid' ";
+                array_push($array,$sql);
+             }
+
+             $correlativo=1;
              foreach($dtdet as $det){
                 $sql="insert into traslado_detalle(id,correlativo,trasladoid,localidadid,productoid,descripcion,cantidad,activo,usuario_creacion,fecha_hora_creacion)
                 values(uuid(),$correlativo,'$id','$localidadid','".$det["productoid"]."','".$det["descripcion"]."','".$det["cantidad"]."',1,'$usuarioid',$hoy)";

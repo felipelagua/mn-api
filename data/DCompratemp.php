@@ -158,7 +158,7 @@
             $sql="";
             if(!$this->existeDetalle($o)){
                 $o->id=Guid();
-                $sql="insert into ".$this->table."_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,activo,usuario_creacion,fecha_hora_creacion)
+                $sql="insert into ".$this->table."_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,'NO',activo,usuario_creacion,fecha_hora_creacion)
                 values('$o->id','$localidadid','$o->productoid','$o->descripcion','$o->cantidad','$o->precio','$o->importe',1,'$usuarioid',$hoy)";
             }
             else{
@@ -367,6 +367,19 @@
              $array = array($sql);
                 $correlativo=1;
 
+            if($this->existePedidoCompra()){
+                $sql="update pedidocompra
+                set estado='CMP',
+                usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
+                where estado='APR' and activo=1 and localidadid!='$localidadid'";
+                array_push($array,$sql);
+
+                $sql="update pedidocompra
+                set estado='ATE',
+                usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
+                where estado='APR' and activo=1 and localidadid='$localidadid'";
+                array_push($array,$sql);
+            }
              foreach($dtdet as $det){
                 $productoid=$det["productoid"];
                 $cantidad=$det["cantidad"];
@@ -596,6 +609,59 @@
             AND a.activo=1 and a.estado in  ('A','R')";
             $dt = $this->sqldata($sql);
             return $dt;
+        }
+
+        public function cargarPedidos(){
+            $this->validarLocal();
+            $this->limpiarDetalle();
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $hoy=now();
+            
+            $sql="INSERT INTO compratemp_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,pedido,activo,
+            usuario_creacion,fecha_hora_creacion)
+            SELECT UUID() AS id,'$localidadid' AS localidadid,C.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
+            0.00 as precio,0.00 AS importe,'SI',
+            1 AS activo,'$usuarioid' AS usuario_creacion,$hoy AS fecha_hora_creacion
+            FROM pedidocompra_detalle AS a
+            INNER JOIN pedidocompra AS b ON b.id=a.pedidocompraid
+            INNER JOIN producto AS c ON c.id=a.productoid
+            WHERE a.activo=1 AND b.estado='APR' AND b.toma='SI'
+            AND b.activo=1
+            GROUP BY c.id,c.nombre
+            ORDER BY c.nombre";
+
+            $this->db->execute($sql);
+            $this->actualizarTotal();
+            $this->obtenerCabecera();
+           
+        }
+        public function limpiarDetalle(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+
+             $sqldet=" delete
+             from ".$this->table."_detalle
+             where localidadid='$localidadid'
+             and usuario_creacion='$usuarioid' ";
+             $this->db->execute($sqldet);
+        }
+
+        public function existePedidoCompra(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $state=false;
+             $sql=" select id
+             from ".$this->table."_detalle
+             where localidadid='$localidadid'
+             and usuario_creacion='$usuarioid' 
+             and activo=1 and pedido='SI'";
+             
+             $dt = $this->sqldata($sql);
+             if(count($dt)>0){
+                $state = true;
+             }
+             return $state;
         }
 
     }

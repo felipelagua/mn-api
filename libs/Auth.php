@@ -62,16 +62,18 @@ class auth{
                 return $claim;
             }
             else{
-                auth::gotError("Sesión exiparada");
+                auth::gotErrorSesion("Sesión exiparada");
             }
         } 
         catch(Exception $e) {
-            auth::gotError("Sesión exiparada");
+            auth::gotErrorSesion("Sesión expirada");
         }
     }
-    private static function gotError($message){
+   
+    private static function gotErrorSesion($message){
         $result=new Result();
         $result->success=false; 
+        $result->status=440;
         $result->error= new ResultError($message,null);
         echo json_encode($result);
         exit();

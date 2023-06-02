@@ -108,6 +108,12 @@ class compratemp extends Controller{
         $d=new DCompratemp();
         $d->listarPago();
     }
+    public function cargarPedidos(){
+        http::role(COMPRA_REGISTRO);
+        http::put();
+        $d=new DCompratemp();
+        $d->cargarPedidos();
+    }
 }
 
 ?>

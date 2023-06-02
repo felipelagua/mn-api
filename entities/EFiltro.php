@@ -11,7 +11,9 @@
         public $usuariocreador;
         public $numero;
         public $localidaddestinoid ;
+        public $localidadid ;
         public $solicitadoporid;
+        public $activado;
         public function __construct($input) {  
             if($input!=null){
                 $this->set($input); 
