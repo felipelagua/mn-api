@@ -1,4 +1,6 @@
 <?php
+usingdb("stock");
+usingdb("producto");
     class Dproducciontemp extends Model{
         private $table="producciontemp";
          
@@ -63,8 +65,7 @@
              where activo=1 
              and terminado='SI'
              and not id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid')
-             and id in (select productoid from producto_insumo where activo=1)
+             where localidadid='$localidadid' and usuario_creacion='$usuarioid') 
              and nombre like  '%".$o->nombre."%'
              order by fecha_hora_creacion desc";
               $this->sqlread($sql);
@@ -213,24 +214,19 @@
                         
                         if($des["stock"]=="SI"){
                             if($des["cantidad"]>0){ 
-                                $cantidad=$des["cantidad"]*$det["cantidad"];
+                                $cantidad=$des["cantidad"]*$det["cantidad"]*-1;
                                
                                 $precio_producto = $precio_producto+ ($precio_stock*$cantidad);
                                 $cantidad_stock = $cantidad*-1;
                                 $nuevo_saldo=$des["stock_actual"] + $cantidad;
                                 $tipo="SAL";
                                 $descripcion = "PRD ".$cab["numero"]." - INGRESO POR PRODUCCION";
-                                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,
-                                usuario_creacion,fecha_hora_creacion)
-                                values(uuid(),'$localidadid','".$itemid."','$descripcion','$tipo', '$cantidad_stock','$nuevo_saldo','$precio_stock',1,'$usuarioid',$hoy)";
+
+                                $sql=db_stock_detalle_insertar($localidadid,$itemid,$descripcion,$tipo,$cantidad_stock,$nuevo_saldo,$precio_stock,$usuarioid,$hoy);
+                                array_push($array,$sql);
+                                $sql=db_stock_actualizar($localidadid,$itemid,$nuevo_saldo,$precio_stock,$usuarioid,$hoy);
                                 array_push($array,$sql);
 
-                                $sql="update localidad_producto set
-                                cantidad=$nuevo_saldo , 
-                                precio='$precio_stock',
-                                usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
-                                where localidadid='$localidadid' and productoid='".$itemid."' ";
-                                array_push($array,$sql);
                             }
                         }
                         else{
@@ -247,9 +243,7 @@
                         where localidadid='$localidadid' and productoid='$productoid' ";
                         array_push($array,$sql);
 
-                        $sql="update  producto set
-                        precio_compra ='$precio_producto' 
-                        where id='$productoid' ";
+                        $sql = db_producto_actualizar_precio_compra($productoid,$precio_producto);
                         array_push($array,$sql);
                     }
                 }

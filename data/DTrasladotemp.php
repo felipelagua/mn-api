@@ -1,4 +1,6 @@
 <?php
+usingdb("traslado");
+usingdb("localidadcosto");
     class DTrasladotemp extends Model{
         private $table="trasladotemp";
          
@@ -6,7 +8,7 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
-            $sqllocalidad="select id,nombre from localidad where activo=1 and id!='$localidadid' order by nombre";
+            $sqllocalidad="select id,nombre from localidad where activo=1   order by nombre";
             $sqlusuario="select id,nombre from usuario where activo=1 and id!='$usuarioid' order by nombre";
 
             $sql=" select a.id,case when a.localidaddestinoid='' then 'X' else a.localidaddestinoid end as localidaddestinoid,
@@ -18,14 +20,11 @@
              and a.usuario_creacion='$usuarioid'
              and a.activo=1";
 
-             $sqldet=" select id,productoid,descripcion,cantidad,ifnull(pedido,'') as pedido
-             from ".$this->table."_detalle
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1
-             order by fecha_hora_creacion desc";
+             $sqldet=db_trasladotemp_detalle($localidadid,$usuarioid);
             
              $cab= new ETrasladotemp($this->sqlgetrow($sql));
+             if($cab->localidaddestinoid==""){$cab->localidaddestinoid="X";}
+             If($cab->solicitadoporid==""){ $cab->solicitadoporid="X";}
             $data["cabecera"]=$cab; 
             $data["detalle"]=$this->sqldata($sqldet);
             $data["localidades"]=$this->sqldata($sqllocalidad);
@@ -37,6 +36,9 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
         
+            if($o->localidaddestinoid=="X"){$o->localidaddestinoid="";}
+            If($o->solicitadoporid=="X"){ $o->solicitadoporid="";}
+
             $hoy=now();
             $sqltable="";
              if(!$this->existe()){
@@ -48,7 +50,7 @@
                 set localidaddestinoid='$o->localidaddestinoid',
                 solicitadoporid='$o->solicitadoporid',
                 comentario='$o->comentario'
-                where localidadid='$localidadid'   and usuario_creacion='$usuarioid'";
+                where localidadid='$localidadid' and usuario_creacion='$usuarioid'";
              }
             $this->db->execute($sqltable);
             $this->gotoSuccess("Se grabaron los datos con éxito",$o->id);
@@ -93,12 +95,7 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
-             $sqldet=" select id,productoid,descripcion,cantidad,ifnull(pedido,'') as pedido  
-             from ".$this->table."_detalle
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1
-             order by fecha_hora_creacion desc";
+             $sqldet= db_trasladotemp_detalle($localidadid,$usuarioid);
 
             $data["detalle"]=$this->sqldata($sqldet);
             $this->gotoSuccessData($data); 
@@ -250,15 +247,7 @@
             $localidadid=auth::local();
         
             $hoy=now();
-            $sql=" select a.id,a.localidaddestinoid,a.solicitadoporid,a.comentario,b.nombre as localidaddestino_nombre,
-            (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from traslado) as numero,
-            c.nombre as localidad_nombre,ifnull(a.pedidocompraid,'') as pedidocompraid
-             from ".$this->table." as a 
-             inner join localidad as b on b.id=a.localidaddestinoid
-             INNER JOIN localidad as c on c.id=a.localidadid
-             where a.localidadid='$localidadid' 
-             and a.usuario_creacion='$usuarioid'
-             and a.activo=1";
+            $sql=db_trasladotemp_obtener($localidadid,$usuarioid);
              $dtcab=$this->sqldata($sql);
              $localidaddestinoid="";
              $pedidocompraid="";
@@ -273,8 +262,10 @@
              case when b.id is null then 'N' else 'S' end as locprod,
              case when b.cantidad is null then 0 else b.cantidad end as stock_origen,
              case when c.cantidad is null then 0 else c.cantidad end as stock_destino,
-             case when c.cantidad is null then 0 else 1 end as existe_destino
-             from ".$this->table."_detalle as a
+             case when c.cantidad is null then 0 else 1 end as existe_destino,
+             d.stock
+             from trasladotemp_detalle as a
+             inner join producto as d on d.id=a.productoid
              left join localidad_producto as b on b.productoid=a.productoid and b.localidadid=a.localidadid
              left join localidad_producto as c on c.productoid=a.productoid and c.localidadid='$localidaddestinoid'
              where a.localidadid='$localidadid' 
@@ -291,11 +282,17 @@
             $id=Guid();
             $estado="REGISTRADO";
 
+            
 
              $sql=" 
              insert into traslado(id,numero,localidadid,pedidocompraid,localidaddestinoid,solicitadoporid,comentario,estado,activo,usuario_creacion,fecha_hora_creacion)
-             select '$id','".$cab["numero"]."','$localidadid','$pedidocompraid','".$cab["localidaddestinoid"]."','".$cab["solicitadoporid"]."','$estado','".$cab["comentario"]."',1,'$usuarioid',$hoy ";
+             select '$id','".$cab["numero"]."','$localidadid','$pedidocompraid','". $localidaddestinoid."','".$cab["solicitadoporid"]."','$estado','".$cab["comentario"]."',1,'$usuarioid',$hoy ";
              $array = array($sql);
+
+             $sql=db_localidad_costo_insertar($localidadid,"TRASLADO",$id,"TRASLADO ORIGEN","REG",$cab["precio_traslado"]*-1,$usuarioid,$hoy);
+             array_push($array,$sql);
+             $sql=db_localidad_costo_insertar( $localidaddestinoid,"TRASLADO",$id,"TRASLADO DESTINO","SAL",$cab["precio_traslado"],$usuarioid,$hoy);
+             array_push($array,$sql);
 
              if($pedidocompraid!=""){
                 $sql="update pedidocompra
@@ -313,46 +310,49 @@
                 array_push($array,$sql);
 
                 $productoid=$det["productoid"];
-                if($det["locprod"]=="N"){
-                    $sql="insert into localidad_producto(id,localidadid,productoid,cantidad,activo,usuario_creacion,fecha_hora_creacion)
-                    values(uuid(),'$localidadid','$productoid',0,1,'$usuarioid',$hoy)";
+                $stock=$det["stock"];
+
+                if($stock=="SI"){
+                    if($det["locprod"]=="N"){
+                        $sql="insert into localidad_producto(id,localidadid,productoid,cantidad,activo,usuario_creacion,fecha_hora_creacion)
+                        values(uuid(),'$localidadid','$productoid',0,1,'$usuarioid',$hoy)";
+                        array_push($array,$sql);
+                    }
+
+                    $cantidad=$det["cantidad"]*-1;
+                    $nuevo_saldo=$det["stock_origen"] + $cantidad;
+                    $descripcion = "TR ".$cab["numero"]." - ENVIADO A: ".$cab["localidaddestino_nombre"];
+                    $tipo="SAL";
+
+                    $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                    values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
+                    array_push($array,$sql);
+
+                    $sql="update localidad_producto set
+                    cantidad=$nuevo_saldo , usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
+                    where localidadid='$localidadid' and productoid='$productoid' ";
+                    array_push($array,$sql);
+
+                    $cantidad=$det["cantidad"];
+                    $nuevo_saldo=$det["stock_destino"] + $cantidad;
+                    $descripcion = "TR ".$cab["numero"]." - DESDE: ".$cab["localidad_nombre"];
+                    $tipo="ING";
+                    $localidaddestinoid=$cab["localidaddestinoid"];
+                    
+                    if($det["existe_destino"]==0){
+                        $sql="insert into localidad_producto(id,localidadid,productoid,cantidad,activo,usuario_creacion,fecha_hora_creacion)
+                        values(uuid(),'$localidaddestinoid','$productoid',0,1,'$usuarioid',$hoy)";
+                        array_push($array,$sql);
+                    }
+                    $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                    values(uuid(),'$localidaddestinoid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
+                    array_push($array,$sql);
+
+                    $sql="update localidad_producto set
+                    cantidad=$nuevo_saldo , usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
+                    where localidadid='$localidaddestinoid' and productoid='$productoid' ";
                     array_push($array,$sql);
                 }
-
-                $cantidad=$det["cantidad"]*-1;
-                $nuevo_saldo=$det["stock_origen"] + $cantidad;
-                $descripcion = "TR ".$cab["numero"]." - ENVIADO A: ".$cab["localidaddestino_nombre"];
-                $tipo="SAL";
-
-                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
-                array_push($array,$sql);
-
-                $sql="update localidad_producto set
-                cantidad=$nuevo_saldo , usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
-                where localidadid='$localidadid' and productoid='$productoid' ";
-                array_push($array,$sql);
-
-                $cantidad=$det["cantidad"];
-                $nuevo_saldo=$det["stock_destino"] + $cantidad;
-                $descripcion = "TR ".$cab["numero"]." - DESDE: ".$cab["localidad_nombre"];
-                $tipo="ING";
-                $localidaddestinoid=$cab["localidaddestinoid"];
-                
-                if($det["existe_destino"]==0){
-                    $sql="insert into localidad_producto(id,localidadid,productoid,cantidad,activo,usuario_creacion,fecha_hora_creacion)
-                    values(uuid(),'$localidaddestinoid','$productoid',0,1,'$usuarioid',$hoy)";
-                    array_push($array,$sql);
-                }
-                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                values(uuid(),'$localidaddestinoid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
-                array_push($array,$sql);
-
-                $sql="update localidad_producto set
-                cantidad=$nuevo_saldo , usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
-                where localidadid='$localidaddestinoid' and productoid='$productoid' ";
-                array_push($array,$sql);
-
                 $correlativo++;
              }
             $sql="delete from trasladotemp_detalle

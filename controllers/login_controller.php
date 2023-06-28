@@ -3,6 +3,7 @@ class login extends Controller{
     public function __construct(){
         parent::__construct();
         parent::usingData("DLogin");
+        parent::usingData("DLocalidad");
         parent::usingEntity("ELogin");
         parent::usingEntity("ELocalidad");
     }
@@ -47,6 +48,8 @@ class login extends Controller{
 
         $grupo=$d->obtenerGrupo($claim->ide,$o->id);
         $permisos=$d->listarPermisos($grupo["grupousuarioid"]);
+        $dloc=new DLocalidad();
+        $loc = $dloc->obtenerLocalidad($o->id);
         $arrayToken=array(
             'iat' => $fechaHora,
             'exp' => $expiration,
@@ -60,6 +63,7 @@ class login extends Controller{
 
         $r = array();
         $r['name'] = $claim->name;
+        $r['ptr'] = $loc["venta"];
         $r['token'] = $jwt_token;
        
         $d->generateSesion($r);

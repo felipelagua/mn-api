@@ -1,4 +1,6 @@
 <?php
+usingdb("compra");
+usingdb("localidadcosto");
     class DCompratemp extends Model{
         private $table="compratemp";
         private function validarCajaAbierta(){
@@ -158,11 +160,11 @@
             $sql="";
             if(!$this->existeDetalle($o)){
                 $o->id=Guid();
-                $sql="insert into ".$this->table."_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,'NO',activo,usuario_creacion,fecha_hora_creacion)
-                values('$o->id','$localidadid','$o->productoid','$o->descripcion','$o->cantidad','$o->precio','$o->importe',1,'$usuarioid',$hoy)";
+                $sql="insert into compratemp_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,pedido,activo,usuario_creacion,fecha_hora_creacion)
+                values('$o->id','$localidadid','$o->productoid','$o->descripcion','$o->cantidad','$o->precio','$o->importe','NO',1,'$usuarioid',$hoy)";
             }
             else{
-                $sql="update  ".$this->table."_detalle
+                $sql="update  compratemp_detalle
                 set cantidad = '$o->cantidad', 
                 precio = '$o->precio', 
                 importe = '$o->importe', 
@@ -355,16 +357,14 @@
             $cab=$dtcab[0];
             $id=Guid();
 
-             $sql=" 
-             insert into compra(id,numero,localidadid,tipocomprobanteid,proveedorid,total,pago,saldo,activo,usuario_creacion,fecha_hora_creacion)
-             select '$id','".$cab["numero"]."','$localidadid','".$cab["tipocomprobanteid"]."',
-             '".$cab["proveedorid"]."',
-             '".$cab["total"]."',
-             '".$cab["pago"]."',
-             '".$cab["saldo"]."',
-             1,'$usuarioid',$hoy ";
+            $sql=db_compra_insertar($id,$cab["numero"],$localidadid,$cab["tipocomprobanteid"],$cab["proveedorid"],
+            $cab["total"],$cab["pago"],$cab["saldo"],
+            $usuarioid,$hoy);
 
-             $array = array($sql);
+            $array = array($sql);
+            $sql=db_localidad_costo_insertar($localidadid,"COMPRA",$id,"COMPRA","SAL",$cab["total"],$usuarioid,$hoy);
+            array_push($array,$sql);
+ 
                 $correlativo=1;
 
             if($this->existePedidoCompra()){
@@ -511,7 +511,7 @@
                 values(uuid(),$correlativo,'$id','".$pag["cuentaid"]."','".$pag["descripcion"]."','".$pag["pago"]."',1,'$usuarioid',$hoy)";
                 array_push($array,$sql);
 
-                $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - INGRESO POR COMPRA: ".$cab["proveedor_nombre"];
+                $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - COMPRA: ".$cab["proveedor_nombre"];
                 if($pag["caja"]=="SI"){
                     $dtcaja=$this->obtenerCajaAbierta();
                     if(count($dtcaja)>0){

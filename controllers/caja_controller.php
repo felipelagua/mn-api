@@ -70,7 +70,10 @@ class Caja extends Controller{
     public function obtenerPreCierre(){
         http::role(CAJA_CIERRE);
         $d=new DCaja();
-        $d->obtenerPreCierre();
+        $data=$d->obtenerPreCierre();
+        $data["filename"]="MNCRJ";
+        http::gotoSuccess($data);
+         
     }
     public function finalizar(){
         http::role(CAJA_CIERRE);

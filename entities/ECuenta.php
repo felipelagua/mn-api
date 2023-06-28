@@ -6,6 +6,7 @@
         public $nombre;
         public $saldo_inicial;
         public $venta;
+        public $pago;
         public $cuentacierreid;
         public function __construct($input) {  
             $this->id=guid();

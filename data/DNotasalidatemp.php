@@ -1,4 +1,5 @@
 <?php
+usingdb("notasalidatemp");
     class DNotasalidatemp extends Model{
         private $table="notasalidatemp";
          
@@ -7,19 +8,13 @@
             $localidadid=auth::local();
 
             $sqlmotivo="select id,nombre from motivosalida where activo=1 order by nombre";
-            $sql=" select id,motivosalidaid,comentario
-             from ".$this->table." 
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1";
 
-             $sqldet=" select id,productoid,descripcion,cantidad
-             from ".$this->table."_detalle
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1";
+            $sql=db_notasalidatemp_obtener($localidadid,$usuarioid);
+             
+            $sqldet=db_notasalidatemp_detalle_listar($localidadid,$usuarioid);
             
-             $cab= new ENotasalidatemp($this->sqlgetrow($sql));
+            $cab= new ENotasalidatemp($this->sqlgetrow($sql));
+            if($cab->motivosalidaid==""){ $cab->motivosalidaid="X";}
             $data["cabecera"]=$cab; 
             $data["detalle"]=$this->sqldata($sqldet);
             $data["motivos"]=$this->sqldata($sqlmotivo);
@@ -84,12 +79,7 @@
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
-             $sqldet=" select id,productoid,descripcion,cantidad
-             from ".$this->table."_detalle
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1
-             order by fecha_hora_creacion desc";
+            $sqldet=db_notasalidatemp_detalle_listar($localidadid,$usuarioid);
 
             $data["detalle"]=$this->sqldata($sqldet);
             $this->gotoSuccessData($data); 

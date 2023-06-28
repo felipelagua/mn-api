@@ -1,6 +1,8 @@
     <?php
     usingdb("tipopedido");
     usingdb("ubicacion");
+    usingdb("pedido");
+    usingdb("localidad");
         class DPedidotemp extends Model{
             private $table="pedido";
             private function validarCajaAbierta(){
@@ -59,7 +61,7 @@
                 LEFT JOIN ubicacion AS e ON e.id=a.ubicacionid
                 left join usuario as f on f.id=a.usuario_creacion
                 where a.localidadid='$localidadid'  
-                and a.activo=1
+                and a.activo=1 and ifnull(a.emitido,'')=''
                 order by a.fecha_hora_creacion desc";
                 $this->sqlread($sql);
             }
@@ -75,7 +77,7 @@
                 a.tipopedido,d.nombre AS tipopedido_nombre,
                 a.ubicacionid,ifnull(e.nombre,'SIN UBICACION') as ubicacion_nombre,
                 DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-                f.nombre as usuario_nombre
+                f.nombre as usuario_nombre,'S/' AS moneda
                 from pedido as a
                 INNER JOIN tipopedido as d ON d.clave=a.tipopedido
                 left join cliente as b on b.id=a.clienteid
@@ -128,7 +130,8 @@
                 $data["pago"]=$this->sqldata($sqlpago);
                 $data["tipocomprobante"]=$this->sqldata($sqltipocomprobante);
                 $data["cuenta"]=$this->sqldata($sqlcuenta);
-
+                $data["filename"]="MNPED";
+                $data["impresora"]=$this->sqlrow(db_localidad_impresora_obtener($localidadid));
                 $this->gotoSuccessData($data); 
             }
             public function nuevo($o){
@@ -150,9 +153,14 @@
                         break;
                 }
                 $this->validar();
-                $sql="insert into pedido(id,localidadid,clienteid,tipopedido,tipocomprobanteid,numero,total,pago,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                values('$o->id','$localidadid', '$o->clienteid','$o->tipopedido','$o->tipocomprobanteid','$o->numero',
-                '$o->total','$o->pago','$o->saldo',1,'$usuarioid',".$hoy.")";
+
+                $sql=db_pedido_insertar(
+                    $o->id,
+                    $localidadid,
+                    $o->clienteid,
+                    $o->tipopedido,
+                    $o->ubicacionid,
+                    $o->numero,$o->total,$o->pago,$o->saldo,$usuarioid,$hoy); 
                 $this->db->execute($sql);
                 $this->gotoSuccess("Se grabaron los datos con éxito",$o->id);
             }
@@ -160,10 +168,8 @@
 
             } 
             private function obtenerNumero(){
-                $sql=" SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 as numero from pedido";
-                $row=$this->sqlgetrow($sql);
+                $row=$this->sqlrow(db_pedido_obtener_nuevo_numero());
                 return $row["numero"];
-
             }
 
             function registrar($o){
@@ -498,7 +504,8 @@
                 $array = array($sql);
                     $correlativo=1;
 
-                
+                $sql="update pedido set emitido='SI' where id='$o->id'";
+                array_push($array,$sql);
                 foreach($dtdet as $det){
                     $productoid=$det["productoid"];
                     $cantidad=$det["cantidad"];
@@ -556,13 +563,13 @@
                         $cantidad = $cantidad*-1;
                         if(count($dtdes)>0){
                             foreach($dtdes as $des){
-                                $itemid=$des["itemid"];
+                                $itemid=$des["productoid"];
                                 $precio_stock=$des["precio_stock"];
                                 $cantidad_stock= $des["stock_actual"];  
                             
                                 if($des["stock"]=="SI"){
                                     if($des["cantidad"]>0){       
-                                        $cantidad=$des["cantidad"]*$det["cantidad"];
+                                        $cantidad=$des["cantidad"]*$det["cantidad"]*-1;
                                         
                                         $saldo_monto_stock_actual=$precio_stock*$cantidad_stock;
                                         $saldo_monto_stock__stock_nuevo = $precio*$cantidad;
@@ -572,7 +579,7 @@
  
                                         $nuevo_saldo=$des["stock_actual"] + $cantidad;
                                         $tipo="ING";
-                                        $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - INGRESO POR COMPRA: ".$cab["cliente_nombre"];
+                                        $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - SALIDA POR VENTA: ".$cab["cliente_nombre"]." - PRODUCTO: ".$det["descripcion"];
                                         $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,
                                         usuario_creacion,fecha_hora_creacion)
                                         values(uuid(),'$localidadid','".$itemid."','$descripcion','$tipo', '$cantidad','$nuevo_saldo','$precio_stock',1,'$usuarioid',$hoy)";
@@ -766,7 +773,7 @@
             }
             public function listarUbicacion(){
                 $localidadid=auth::local();
-                $this->sqlread(db_ubicacion_listar($localidadid));
+                $this->sqlread(db_ubicacion_listar_estado($localidadid));
             }
         }
     ?>

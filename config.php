@@ -49,6 +49,11 @@ define("PEDIDO_COMPRA","1a515fca-ab70-a039-4da7-5a7a6b1b1427");
 define("PEDIDO_COMPRA_TOMA","6ebe48e3-da85-63b2-9331-0314f6a92d4a");
 define("TIPO_PEDIDO","4f8591f7-300a-edd0-1006-f37345657e13");
 
+define("REPORTE_PRODUCTO","7bd43cc6-6b06-c22d-db37-c91acf617a3e");
+define("TRABAJADOR","11f40fac-fdfd-c4ff-5b08-41b50b7d914b");
+define("PAGO","c58cae8e-ab57-ee7f-508e-7ec757f4f8d1");
+define("SERVICIO","c92e05c8-8c7e-2d6b-53a3-5ea40fef5b30");
+define("PAGOSERVICIO","d590253b-1fbe-2f66-89d6-3fbc2d9aaa43");
 define("PARA_LLEVAR","LLEV");
 define("DELIVERY","DELI");
 define("EN_MESA","MESA");

@@ -1,4 +1,5 @@
 <?php
+usingdb("cuenta");
     class DCuenta extends Model{
         private $table="cuenta";
 
@@ -34,6 +35,7 @@
             $sql="update cuenta set 
             nombre='$o->nombre',
             venta='$o->venta',
+            pago='$o->pago',
             usuarioid='$o->usuarioid',
             formapagoid='$o->formapagoid',
             cuentacierreid='$o->cuentacierreid',
@@ -65,16 +67,7 @@
            $this->sqlread($sql);
         }
         public function obtener($o){
-            $sql="select a.id,a.nombre,b.nombre as usuario_nombre,a.usuarioid,a.formapagoid,
-            c.nombre as formapago_nombre,a.saldo,a.saldo_inicial,a.venta,
-            case when a.cuentacierreid=null || a.cuentacierreid='' then 'X' else a.cuentacierreid end as cuentacierreid,
-            ifnull(d.nombre,'') as cuentadestino_nombre
-            from cuenta as a
-            inner join usuario as b on b.id=a.usuarioid
-            inner join formapago as c on c.id = a.formapagoid
-            left join cuenta as d on d.id=a.cuentacierreid
-            where a.id='$o->id' and a.activo=1";
-
+     
             $sqlusuario="select id,nombre
             from usuario where activo=1 
             order by nombre";
@@ -87,7 +80,7 @@
             from cuenta where activo=1 
             order by nombre";
 
-            $data["ent"]=$this->sqlgetrow($sql);
+            $data["ent"]=$this->sqlgetrow(db_cuenta_obtener($o->id));
             $data["personas"]=$this->sqldata($sqlusuario);
             $data["formapago"]=$this->sqldata($sqlformapago);
             $data["cuentas"]=$this->sqldata($sqlcuenta);

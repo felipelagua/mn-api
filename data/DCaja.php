@@ -1,4 +1,6 @@
 <?php
+usingdb("localidad");
+usingdb("caja");
     class DCaja extends Model{
         private $table="caja";
 
@@ -306,34 +308,15 @@
             $this->validarLocal();
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=  $sql="SELECT a.id,a.saldo,b.nombre as localidad_nombre,date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_ini,
-            date_format(a.fecha_hora_modificacion,'%d/%m/%Y %H:%i') as fecha_fin
-            FROM caja AS a
-            inner join localidad as b on b.id=a.localidadid
-            WHERE a.usuarioid='$usuarioid'
-            and a.localidadid='$localidadid' and a.estado in  ('A','R') and a.activo=1";
-
-            $data["cabecera"]=$this->sqlgetrow($sql);
+            $hoy=now();
+ 
+            $data["cabecera"]=$this->sqlgetrow(db_caja_pre_cierre_obtener($localidadid,$usuarioid,$hoy));
             $cajaid=$data["cabecera"]["id"];
-            $sqldet="SELECT UUID() AS id,'SALDO INICIAL' AS descripcion,1 AS cantidad, a.saldo_inicial AS monto 
-            FROM caja AS a
-            WHERE a.id='$cajaid' AND a.activo=1
-            UNION ALL
-            SELECT UUID() AS id,'INGRESO EFECTIVO',COUNT(a.id) AS cantidad,SUM(a.monto) AS monto
-            FROM caja_detalle AS a
-            WHERE a.cajaid='$cajaid' AND a.activo=1 AND a.tipo='ING'
-            UNION ALL
-            SELECT UUID() AS id,'SALIDA EFECTIVO',COUNT(a.id) AS cantidad,SUM(a.monto) AS monto
-            FROM caja_detalle AS a
-            WHERE a.cajaid='$cajaid' AND a.activo=1 AND a.tipo='SAL'
-            UNION ALL
-            SELECT UUID() AS id,'SALDO CAJA' AS nombre,1 AS cantidad, a.saldo AS monto 
-            FROM caja AS a
-            WHERE a.id='$cajaid' AND a.activo=1";
-
            
-            $data["detalle"]=$this->sqldata($sqldet);
-            $this->gotoSuccessData($data);
+            $data["detalle"]=$this->sqldata(db_caja_pre_cierre_detalle($cajaid));
+            $data["impresora"]=$this->sqlrow(db_localidad_impresora_obtener($localidadid));
+             
+           return $data;
         }
         public function finalizar(){
             $dt = $this->obtenerCajaAbierta();

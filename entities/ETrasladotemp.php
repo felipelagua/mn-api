@@ -15,7 +15,9 @@
                 $this->localidaddestinoid="";
                 $this->solicitadoporid="";
                 $this->comentario="";
+                $this->pedidocompraid="";
             }
+             
             if(!isset($this->id)){
                 $this->id=guid();
             } 
