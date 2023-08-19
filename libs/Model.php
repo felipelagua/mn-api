@@ -19,8 +19,14 @@ function guid(){
     }
 }
 
-function usingdb($db){
-    $path="db/db".$db.".php";
+function usingdb($key){
+    $path="db/db".$key.".php";
+    if(file_exists($path)){
+        include($path); 
+    }
+}
+function using($key){
+    $path= $key.".php";
     if(file_exists($path)){
         include($path); 
     }
@@ -315,6 +321,7 @@ class Model{
                     $sql.=",";
                 }
                 $sql.=$field;
+                $index++;
             }
         }
         else{

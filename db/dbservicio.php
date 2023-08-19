@@ -34,4 +34,13 @@ function db_servicio_periodo_listar($anio,$mes){
     and year(a.vence)='$anio' and month(a.vence)='$mes'";
     return $sql;
 }
+function db_servicio_actualizar_ultimo_pago($id,$monto,$usuarioid,$hoy){
+    $sql="update servicio
+    set ultimopago='$monto',
+    vence=DATE_ADD(vence, INTERVAL duracionmes MONTH),
+    usuario_modificacion='$usuarioid',
+    fecha_hora_modificacion=$hoy
+    where id='$id'";
+    return $sql;
+}
 ?>

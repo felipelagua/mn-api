@@ -1,4 +1,5 @@
 <?php
+usingdb("producto");
     class DProducto extends Model{
         private $table="producto";
         public function registrar($o){
@@ -11,16 +12,18 @@
             $this->delete($this->table,$o);
         }
         public function listar($o){
-            $sql=" select id,nombre,stock from producto where activo=1 and nombre like  '%".$o->nombre."%'";
-            $this->sqlread($sql);
+            if($o->clasificacion1id=="X"){ $o->clasificacion1id="";}
+            $this->sqlread(db_producto_listar($o->nombre,$o->clasificacion1id));
         }
         public function obtener($o){
-            $sql=" select id,nombre,stock,compra,venta,instantaneo,terminado,
+            $sql=" select id,nombre,stock,compra,venta,instantaneo,terminado,importecaja,
+            imagen,
             case when clasificacion1id='' then 'X' else clasificacion1id end as clasificacion1id,
             case when clasificacion2id='' then 'X' else clasificacion2id end as clasificacion2id,
             case when clasificacion3id='' then 'X' else clasificacion3id end as clasificacion3id,
-            precio_compra,precio_venta
-            from producto where id='$o->id' and activo=1";
+            precio_compra,precio_venta,deshabilitado,nombre_web,descripcion
+            from producto 
+            where id='$o->id' and activo=1";
 
             $sqlclasificacion1="select id,nombre
             from clasificacion1 where activo=1 
@@ -69,8 +72,7 @@
                 from producto 
                  where activo=1 
                  and terminado='NO'
-                 and instantaneo='NO'
-                 and stock='NO'
+                 and instantaneo='NO' 
                  and nombre like  '%".$o->nombre."%'
                  order by nombre asc";
             }
@@ -80,7 +82,6 @@
                  where activo=1 
                  and terminado='NO'
                  and instantaneo='NO'
-                 and venta='NO'
                  and nombre like  '%".$o->nombre."%'
                  order by nombre asc";
             }
@@ -152,7 +153,7 @@
            case when a.cantidad=0 then'Definir la cantidad luego de la compra de origen'
            else 'Cantidad automatica generada al comprar el origen'
            end as descripcion
-            FROM producto_Insumo AS a 
+            FROM producto_insumo AS a 
             INNER JOIN producto AS b ON b.id=a.itemid
             WHERE a.productoid = '$o->id' and a.activo = 1";
             return $sql;

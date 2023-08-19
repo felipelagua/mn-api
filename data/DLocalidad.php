@@ -12,12 +12,12 @@
             $this->sqlread($sql);
         }
         public function obtener($o){
-            $sql=" select id,nombre,direccion,venta,impresora,rutaimpresion 
+            $sql=" select id,nombre,direccion,venta,impresora,nombrecorto 
             from localidad where id='@id' and activo=1";
             $this->sqlGet($sql,$o->id);
         }
         public function obtenerLocalidad($id){
-            $sql=" select id,nombre,direccion,venta,impresora,rutaimpresion
+            $sql=" select id,nombre,direccion,venta,impresora,nombrecorto
             from localidad where id='$id' and activo=1";
             return $this->sqlrow($sql);
         }

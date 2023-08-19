@@ -4,7 +4,7 @@
 
         function required($value,$label){
             if(!isset($value) || strlen($value)==0){
-                array_push($this->details,"El campo $label es obligatorio");
+                array_push($this->details,$label);
             }
         }
         function typeOperation($value){

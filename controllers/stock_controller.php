@@ -1,50 +1,50 @@
 <?php
+using("data/DStock"); 
+using("entities/EFiltro");
+using("entities/ELocalidadProducto");
+
 class stock extends Controller{
+    private $d;
     public function __construct(){
         parent::__construct();
-        parent::usingData("DStock");
-        parent::usingEntity("EFiltro");
+        $this->d= new DStock();
     }
-
     public function listar(){
-        http::role(STOCK);
-        http::post();
-        $input=input();
-        $o=new EFiltro($input);
-        $d=new DStock();
-        $result = $d->listar($o);
-        ok($result);
+        http::role(STOCK);http::post();
+        $o=new EFiltro(input());
+        $data = $this->d->listar($o);
+        ok($data);
+    }
+    public function listarStock(){
+        http::role(CSTOCK);http::post();
+        $o=new EFiltro(input());
+        $data = $this->d->listarStock($o);
+        ok($data);
+    }
+    public function obtenerFiltros(){
+        http::role(CSTOCK);http::post();
+        $this->d->obtenerFiltros();
     }
     public function obtener(){
-        http::role(STOCK);
-        http::post();
-        $input=input();
-        $o=new EFiltro($input);
-        $d=new DStock();
-        $d->obtener($o);
+        http::role(STOCK);http::post();
+        $o=new EFiltro(input());
+        $this->d->obtener($o);
     }
-    public function pdf(){
-        http::role(STOCK);
-        http::post();
-        $input=input();
-        $localidadid=auth::local();
-        $o=new EFiltro($input);
-        $d=new DStock();
-
-        $data = $d->listar($o);
-        $loc = $d->obtenerLocalidad($localidadid);
-        $pdf = new PDF();
-        $pdf->setTitle("STOCK DE ALMACEN");
-        $pdf->setLocal($loc["nombre"]);
-
-        $head = array('PRODUCTO', 'STOCK','STOCK FISICO');
-        $align=array('L', 'R','R');
-        $field = array('nombre', 'cantidad','');
-        $width= array(130,30,30);
-        $pdf->setTable($data,$head,$field,$align,$width);
-        $pdf->download("stock");
+    public function obtenerDetalleStock(){
+        http::role(CSTOCK);http::post();
+        $o=new EFiltro(input());
+        $this->d->obtenerDetalleStock($o);
     }
- 
+    public function obtenerStock(){
+        http::role(CSTOCK);http::post();
+        $o=new EFiltro(input());
+        $this->d->obtenerStock($o);
+    }
+    public function registrarStock(){
+        http::role(CSTOCK);http::put();
+        $o=new ELocalidadProducto(input());
+        $this->d->registrarStock($o);
+    }
 }
 
 ?>

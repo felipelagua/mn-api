@@ -1,28 +1,15 @@
 <?php
-usingdb("stock");
+using("db/stock");
 usingdb("producto");
+using("db/produccion");
     class Dproducciontemp extends Model{
         private $table="producciontemp";
          
         public function obtener(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-
-            $sql=" select id  
-             from ".$this->table." 
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1";
-
-             $sqldet=" select id,productoid,descripcion,cantidad
-             from ".$this->table."_detalle
-             where localidadid='$localidadid' 
-             and usuario_creacion='$usuarioid'
-             and activo=1";
-            
-             $cab= new Eproducciontemp($this->sqlgetrow($sql));
-            $data["cabecera"]=$cab;
-            $data["detalle"]=$this->sqldata($sqldet); 
+            $data["cabecera"]=new Eproducciontemp($this->sqlgetrow(db_producciontemp_obtener($localidadid,$usuarioid)));;
+            $data["detalle"]=$this->sqldata(db_producciontemp_detalle_listar($localidadid,$usuarioid)); 
             $this->gotoSuccessData($data); 
         }
 
@@ -37,7 +24,9 @@ usingdb("producto");
                 values('$o->id','$localidadid',1,'$usuarioid',".$hoy.")";
                 $this->db->execute($sqltable);
              }
-  
+             else{
+                $this->db->execute(db_producciontemp_actualizar($localidadid,$usuarioid,$o->comentario));
+             }
            
             $this->gotoSuccess("Se grabaron los datos con éxito",$o->id);
 
@@ -60,15 +49,12 @@ usingdb("producto");
         public function buscarProducto($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=" select id as productoid,nombre as descripcion,1 as cantidad 
-            from producto 
-             where activo=1 
-             and terminado='SI'
-             and not id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid') 
-             and nombre like  '%".$o->nombre."%'
-             order by fecha_hora_creacion desc";
-              $this->sqlread($sql);
+            $this->sqlread(db_produccion_producto_buscar($localidadid,$usuarioid,$o->nombre));
+        }
+        public function buscarProductoNombre($o){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $this->sqlread(db_produccion_producto_buscar_nombre($localidadid,$usuarioid,$o->nombre));
         }
         public function listarDetalle(){
             $usuarioid=auth::user();
@@ -273,6 +259,7 @@ usingdb("producto");
             else{
                 foreach($dtdet as $det){
                     $productoid = $det["productoid"];
+                    /*
                     $sqldes="SELECT a.itemid, a.cantidad,  b.nombre,
                     case when c.id is null then 'N' else 'S' end as locprod,
                     case when c.cantidad is null then 0 else c.cantidad end as stock_actual,
@@ -293,6 +280,7 @@ usingdb("producto");
                             }
                         }
                     }
+                    */
                 }
             }
             if(count($details)){

@@ -1,28 +1,41 @@
 <?php
+using("data/DCaja"); 
+using("entities/ECaja");
+using("entities/EFiltro");
+using("entities/ECajaDetalle");
+using("entities/ECuentaDetalle");
+using("validations/VCaja");
+using("validations/VCajaDetalle");
+using("validations/VCajaTransferir");
 class Caja extends Controller{
+    private $d;
+    private $v;
     public function __construct(){
         parent::__construct();
-        parent::usingData("DCaja");
-        parent::usingEntity("ECaja");
-        parent::usingEntity("ECajaDetalle");
-        parent::usingValidate("VCaja");
-        parent::usingValidate("VCajaDetalle");
-        parent::usingValidate("VCajaTransferir");
-        parent::usingEntity("ECuentaDetalle");
+        $this->d= new DCaja();
+        $this->v= new  VCaja();
+        
     }
-
+    public function listar(){
+        http::role(CAJA_REPORTE);
+        http::post();
+        $o=new EFiltro(input());
+        $this->d->listar($o);
+    }
+    public function obtenerFiltros(){
+        http::role(CAJA_REPORTE);
+        http::post();
+        $this->d->obtenerFiltros();
+    }
     public function aperturar(){
-        http::role(CAJA_APERTURA);
+        http::role(CAJA);
         http::put();
-        $input=input();
-        $o=new ECaja($input);
-        $v=new VCaja();
-        $v->validate($o);
-        $d=new DCaja();
-        $d->aperturar($o);
+        $o=new ECaja(input()); 
+        $this->v->validate($o);
+        $this->d->aperturar($o);
     }
     public function registrarMovimiento(){
-        http::role(CAJA_APERTURA);
+        http::role(CAJA);
         http::put();
         $input=input();
         $o=new ECajaDetalle($input);
@@ -34,7 +47,7 @@ class Caja extends Controller{
     }
  
     public function obtener(){
-        http::role(CAJA_APERTURA);
+        http::role(CAJA);
         http::post();
         $input=input();
         $o=new ECaja($input);
@@ -42,25 +55,31 @@ class Caja extends Controller{
         $d->obtener($o);
     }
     public function obtenerDatosApertura(){
-        http::role(CAJA_APERTURA);
+        http::role(CAJA);
         $d=new DCaja();
         $d->obtenerDatosApertura();
     }
     public function obtenerDetalle(){
-        http::role(CAJA_DETALLE);
+        http::role(CAJA);
         http::post();
         $input=input();
         $o=new ECaja($input);
         $d=new DCaja();
         $d->obtenerDetalle($o);
     }
+    public function obtenerDetalleCierre(){
+        http::role(CAJA_REPORTE);
+        http::post();
+        $o=new ECaja(input());
+        $this->d->obtenerDetalleCierre($o);
+    }
     public function obtenerDatosReserva(){
-        http::role(CAJA_RESERVA);
+        http::role(CAJA);
         $d=new DCaja();
         $d->obtenerDatosReserva();
     }
     public function reservar(){
-        http::role(CAJA_RESERVA);
+        http::role(CAJA);
         http::put();
         $input=input();
         $o=new ECajaDetalle($input);
@@ -68,7 +87,7 @@ class Caja extends Controller{
         $d->reservar($o);
     }
     public function obtenerPreCierre(){
-        http::role(CAJA_CIERRE);
+        http::role(CAJA);
         $d=new DCaja();
         $data=$d->obtenerPreCierre();
         $data["filename"]="MNCRJ";
@@ -76,7 +95,7 @@ class Caja extends Controller{
          
     }
     public function finalizar(){
-        http::role(CAJA_CIERRE);
+        http::role(CAJA);
         http::put();
         $d=new DCaja();
         $d->finalizar();

@@ -4,6 +4,7 @@ usingdb("producto");
 usingdb("proveedor");
 usingdb("localidad");
 usingdb("cuenta");
+usingdb("compra");
 usingdb("tipocomprobante");
     class DServicio extends Model{
         private $table="servicio";
@@ -60,12 +61,47 @@ usingdb("tipocomprobante");
  
         }
         public function obtenerDatosPago($o){
- 
             $data["ent"]=$this->sqlrow(db_servicio_obtener($o->id));
             $data["cuenta"]=$this->sqldata(db_cuenta_pago_listar());
             $data["tipocomprobante"]=$this->sqldata(db_tipocomprobante_listar());
             $this->gotoSuccessData($data); 
  
+        }
+        public function registrarPago($o){
+            $hoy=now();
+            $usuarioid=auth::user();$localidadid=auth::local();
+            $o->id=guid();
+            $serv=$this->sqlrow(db_servicio_obtener($o->servicioid));
+            $cta=$this->sqlrow(db_cuenta_obtener($o->cuentaid));
+
+            $periodoservicio=$o->anio."-".$o->mes."-01";
+            
+            $sql= db_compra_servicio_insertar($o->id,$o->servicioid,$periodoservicio,$o->numero,$serv["localidadid"],
+            $o->tipocomprobanteid,$serv["proveedorid"],$o->monto,$o->monto,0,$usuarioid,$hoy);
+            $array = array($sql);
+
+            $sql=db_compra_detalle_insertar(1,$o->id,$serv["localidadid"],$serv["productoid"],$serv["producto_nombre"],1,$o->monto,$o->monto,$usuarioid,$hoy);
+            array_push($array,$sql);
+
+            $sql=db_compra_pago_insertar(1,$o->id,$localidadid,$o->cuentaid,$cta["nombre"],$o->monto,$usuarioid,$hoy);
+            array_push($array,$sql);
+
+            $odet=new ECuentaDetalle();
+            $odet->tipo="SAL";
+            $odet->descripcion="PAGO SERV.".$serv["proveedor_nombre"]." - ".$serv["producto_nombre"];
+            $odet->monto=$o->monto*-1;
+            $odet->saldo=$cta["saldo"]+$odet->monto;
+            $odet->cuentaid= $o->cuentaid;
+            $sql=$this->sqlInsert("cuenta_detalle",$odet); 
+            array_push($array,$sql);
+
+            $sql=$this->sqlUpdateSum("cuenta",$o->cuentaid,"saldo",$odet->monto);
+            array_push($array,$sql);
+
+            $sql=db_servicio_actualizar_ultimo_pago($o->servicioid,$o->monto,$usuarioid,$hoy);
+            array_push($array,$sql);
+
+            $this->db->transacm($array,"Se pagó un servicio correctamente");
         }
     }
 ?>

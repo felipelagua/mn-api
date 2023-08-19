@@ -2,17 +2,18 @@
 define("DB_HOST","localhost");
 define("DB_USER","root");
 define("DB_PASS","");
-define("DB_NAME","dbcli00001");
+//define("DB_NAME","dbcli00001");
+define("DB_NAME","dbcalderas02");
 define("DB_HOUR_DIFF","0");
 define("JWT_SECRET_KEY","minegocio2022.@$");
 define("TIMEOUT_EXPIRATIONS",600);
  
   
  
-define("CAJA_APERTURA","bfea00cd-3771-bf2d-4013-70e5b02de3e5");
+define("CAJA_REPORTE","bfea00cd-3771-bf2d-4013-70e5b02de3e5");
 define("CAJA_DETALLE","27802e13-c026-d360-516c-ccdf09521f25");
 define("CAJA_RESERVA","c9ba85f9-82f1-c99a-152b-f4c2e3162317");
-define("CAJA_CIERRE","f504e92a-343b-68e5-07d6-1f0b68a9f2ce");
+ 
 define("CLIENTE","f3a7b8dc-dd61-1f80-3b74-1abdd9715a8d");
 define("PEDIDO_ANTICIPADO","164f64f9-ccc4-cc16-923e-63410a69e5de");
 define("REGISTRAR_PEDIDO","aadd6d47-7825-b43f-6241-ae9a3367639a");
@@ -26,7 +27,7 @@ define("NUEVO_PEDIDO","ad69dfb1-1287-a6bf-223d-6a60772cc989");
 define("STOCK","d23eba14-b684-3ce0-4299-3e8b3284eed5");
 define("VENTA","bfd68ab4-3adf-5044-9475-f2cc42ca16f1");
 define("COMPRA","dd26dd6b-0c93-91f5-fac2-d94e2e35157a");
-define("CAJA","c886a955-93f2-6009-8a39-85708af8813e");
+define("CAJA","f504e92a-343b-68e5-07d6-1f0b68a9f2ce");
 define("NOTA_INGRESO","4a80f93c-78b7-fa11-baf9-04a93caa7530");
 define("NOTA_SALIDA","887fb2b9-c0c3-475e-1c54-76ee0a4def33");
 define("TRASLADO","0bbd32c9-22ac-2d9c-862f-501b0c4cf764");
@@ -54,6 +55,15 @@ define("TRABAJADOR","11f40fac-fdfd-c4ff-5b08-41b50b7d914b");
 define("PAGO","c58cae8e-ab57-ee7f-508e-7ec757f4f8d1");
 define("SERVICIO","c92e05c8-8c7e-2d6b-53a3-5ea40fef5b30");
 define("PAGOSERVICIO","d590253b-1fbe-2f66-89d6-3fbc2d9aaa43");
+
+define("REPORTE_VENTA","174c5d3c-e45f-2872-6e1c-b98bdd3c3b6b");
+define("REPORTE_VENTA_DIA","84fcec89-721a-d21b-83c9-5a9c1108fc0a");
+define("REPORTE_VENTA_HORA","55298df07-9c2b-d6ab-748a-004d164e9dac");
+
+define("CSTOCK","65ea8f76-00f9-6f72-f849-e6200c89ce4b");
+define("PAGO_PROVEEDOR","f89e41ec-b96e-933e-cb67-93b252718433");
+
+
 define("PARA_LLEVAR","LLEV");
 define("DELIVERY","DELI");
 define("EN_MESA","MESA");

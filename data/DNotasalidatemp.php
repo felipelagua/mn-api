@@ -1,8 +1,18 @@
 <?php
-usingdb("notasalidatemp");
+usingdb("notasalida");
+usingdb("caja");
     class DNotasalidatemp extends Model{
         private $table="notasalidatemp";
-         
+        private function obtenerCajaid(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $dt=$this->sqldata(db_caja_abierta_obtener($localidadid,$usuarioid));
+            $cajaid="";
+            if(count($dt)>0){
+                $cajaid=$dt[0]["id"];
+            }
+            return $cajaid;
+        }
         public function obtener(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
@@ -58,22 +68,12 @@ usingdb("notasalidatemp");
         public function buscarProducto($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=" select a.id as productoid,a.nombre as descripcion,cast((b.cantidad-ifnull(c.cantidad,0.00)) AS DECIMAL(10,0))  as cantidad,
-            cast(b.cantidad  AS DECIMAL(10,0)) as stock
-            from producto as a
-            inner join localidad_producto b on b.productoid=a.id and b.localidadid='$localidadid'
-            left join 
-            (SELECT productoid,ifnull(SUM(cantidad),0) AS cantidad
-            FROM notasalidatemp_detalle
-            WHERE localidadid='$localidadid' and usuario_creacion!='$usuarioid' and NOT productoid IS NULL
-            GROUP BY productoid) as c on c.productoid=a.id
-             where a.activo=1 
-             and b.activo=1
-             and not a.id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid')
-             and a.nombre like  '%".$o->nombre."%'
-             order by a.fecha_hora_creacion desc";
-              $this->sqlread($sql);
+            $this->sqlread(db_notasalida_producto_buscar($localidadid,$usuarioid,$o->nombre));
+        }
+        public function buscarProductoNombre($o){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $this->sqlread(db_notasalida_producto_buscar_nombre($localidadid,$usuarioid,$o->nombre));
         }
         public function listarDetalle(){
             $usuarioid=auth::user();
@@ -169,7 +169,7 @@ usingdb("notasalidatemp");
         function finalizar(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-        
+            $cajaid=$this->obtenerCajaid();
             $hoy=now();
             $sql=" select a.id,a.motivosalidaid,a.comentario,b.nombre as motivosalida_nombre,
             (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from notasalida) as numero
@@ -219,8 +219,8 @@ usingdb("notasalidatemp");
                 $nuevo_saldo=$det["stock_actual"] + $cantidad;
                 $descripcion = "NS ".$cab["numero"]." - SALIDA POR: ".$cab["motivosalida_nombre"];
                 $tipo="SAL";
-                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
+                $sql="insert into localidad_producto_detalle(id,localidadid,cajaid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                values(uuid(),'$localidadid','$cajaid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
                 array_push($array,$sql);
 
                 $sql="update localidad_producto set

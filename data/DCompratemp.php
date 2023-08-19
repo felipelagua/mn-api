@@ -1,6 +1,7 @@
 <?php
 usingdb("compra");
 usingdb("localidadcosto");
+usingdb("caja");
     class DCompratemp extends Model{
         private $table="compratemp";
         private function validarCajaAbierta(){
@@ -314,11 +315,21 @@ usingdb("localidadcosto");
             }
             return $row;
         }
+        private function obtenerCajaid(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $dt=$this->sqldata(db_caja_abierta_obtener($localidadid,$usuarioid));
+            $cajaid="";
+            if(count($dt)>0){
+                $cajaid=$dt[0]["id"];
+            }
+            return $cajaid;
+        }
         function finalizar(){
             $this->validarLocal();
             $usuarioid=auth::user();
             $localidadid=auth::local();
-        
+            $cajaid=$this->obtenerCajaid();
             $hoy=now();
             $sql=" select a.id,a.proveedorid,a.tipocomprobanteid,ifnull(b.nombre_corto,'') as tipocomprobante_nombre,
              a.numero,a.total,a.pago,a.saldo,ifnull(c.nombre,'') as proveedor_nombre,c.credito
@@ -423,8 +434,8 @@ usingdb("localidadcosto");
                     }
 
                     
-                    $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,usuario_creacion,fecha_hora_creacion)
-                    values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', '$cantidad' ,'$cantidad_stock','$precio_stock',1,'$usuarioid',$hoy)";
+                    $sql="insert into localidad_producto_detalle(id,localidadid,cajaid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,usuario_creacion,fecha_hora_creacion)
+                    values(uuid(),'$localidadid','$cajaid','$productoid','$descripcion','$tipo', '$cantidad' ,'$cantidad_stock','$precio_stock',1,'$usuarioid',$hoy)";
                     array_push($array,$sql);
 
                     $sql="update localidad_producto set
@@ -481,9 +492,9 @@ usingdb("localidadcosto");
                                     $nuevo_saldo=$des["stock_actual"] + $cantidad;
                                     $tipo="ING";
                                     $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - INGRESO POR COMPRA: ".$cab["proveedor_nombre"];
-                                    $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,
+                                    $sql="insert into localidad_producto_detalle(id,localidadid,cajaid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,
                                     usuario_creacion,fecha_hora_creacion)
-                                    values(uuid(),'$localidadid','".$itemid."','$descripcion','$tipo', '$cantidad','$nuevo_saldo','$precio_stock',1,'$usuarioid',$hoy)";
+                                    values(uuid(),'$localidadid','$cajaid','".$itemid."','$descripcion','$tipo', '$cantidad','$nuevo_saldo','$precio_stock',1,'$usuarioid',$hoy)";
                                     array_push($array,$sql);
                 
                                     $sql="update localidad_producto set
@@ -528,8 +539,7 @@ usingdb("localidadcosto");
 
                         $sql=$this->sqlUpdateSum("caja",$caja["id"],"saldo",$odet->monto);
                         array_push($array,$sql);
-                    }
-                    
+                    }    
                 }
 
                 $odet=new ECuentaDetalle();
@@ -620,7 +630,7 @@ usingdb("localidadcosto");
             
             $sql="INSERT INTO compratemp_detalle(id,localidadid,productoid,descripcion,cantidad,precio,importe,pedido,activo,
             usuario_creacion,fecha_hora_creacion)
-            SELECT UUID() AS id,'$localidadid' AS localidadid,C.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
+            SELECT UUID() AS id,'$localidadid' AS localidadid,c.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
             0.00 as precio,0.00 AS importe,'SI',
             1 AS activo,'$usuarioid' AS usuario_creacion,$hoy AS fecha_hora_creacion
             FROM pedidocompra_detalle AS a

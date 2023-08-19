@@ -8,7 +8,7 @@
             a.numero,b.nombre AS motivoingreso_nombre,
             a.comentario,
             c.nombre AS localidad_nombre,
-            d.nombre AS usuario_nombre
+            d.nombre AS usuario_nombre,(select count(1) from notaingreso_detalle where notaingresoid=a.id) as items
             FROM notaingreso AS a
             INNER JOIN motivoingreso AS b ON b.id=a.motivoingresoid
             INNER JOIN localidad AS c ON c.id=a.localidadid

@@ -1,13 +1,26 @@
 <?php
+usingdb("notaingreso");
+usingdb("caja");
     class DNotaingresotemp extends Model{
         private $table="notaingresotemp";
-         
+        private function obtenerCajaid(){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $dt=$this->sqldata(db_caja_abierta_obtener($localidadid,$usuarioid));
+            $cajaid="";
+            if(count($dt)>0){
+                $cajaid=$dt[0]["id"];
+            }
+            return $cajaid;
+        }
         public function obtener(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
 
             $sqlmotivo="select id,nombre from motivoingreso where activo=1 order by nombre";
-            $sql=" select id,motivoingresoid,comentario
+            $sql=" select id,
+            case when ifnull(motivoingresoid,'')='' then 'X' else motivoingresoid end as motivoingresoid,
+            comentario
              from ".$this->table." 
              where localidadid='$localidadid' 
              and usuario_creacion='$usuarioid'
@@ -20,6 +33,7 @@
              and activo=1";
             
              $cab= new ENotaingresotemp($this->sqlgetrow($sql));
+             if($cab->motivoingresoid==""){$cab->motivoingresoid="X";}
             $data["cabecera"]=$cab;
             $data["detalle"]=$this->sqldata($sqldet);
             $data["motivos"]=$this->sqldata($sqlmotivo);
@@ -63,14 +77,12 @@
         public function buscarProducto($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=" select id as productoid,nombre as descripcion,1 as cantidad 
-            from producto 
-             where activo=1 
-             and not id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid')
-             and nombre like  '%".$o->nombre."%'
-             order by fecha_hora_creacion desc";
-              $this->sqlread($sql);
+            $this->sqlread(db_notaingreso_producto_buscar($localidadid,$usuarioid,$o->nombre));
+        }
+        public function buscarProductoNombre($o){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $this->sqlread(db_notaingreso_producto_buscar_nombre($localidadid,$usuarioid,$o->nombre));
         }
         public function listarDetalle(){
             $usuarioid=auth::user();
@@ -138,7 +150,7 @@
         function finalizar(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-        
+            $cajaid=$this->obtenerCajaid();
             $hoy=now();
             $sql=" select a.id,a.motivoingresoid,a.comentario,b.nombre as motivoingreso_nombre,
             (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from notaingreso) as numero
@@ -188,8 +200,8 @@
                 $nuevo_saldo=$det["stock_actual"] + $cantidad;
                 $tipo="ING";
                 $descripcion = "NI ".$cab["numero"]." - INGRESO POR: ".$cab["motivoingreso_nombre"];
-                $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
+                $sql="insert into localidad_producto_detalle(id,localidadid,cajaid,productoid,descripcion,tipo,cantidad,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                values(uuid(),'$localidadid','$cajaid','$productoid','$descripcion','$tipo', $cantidad ,$nuevo_saldo,1,'$usuarioid',$hoy)";
                 array_push($array,$sql);
 
                 $sql="update localidad_producto set

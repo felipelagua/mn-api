@@ -1,4 +1,7 @@
 <?php
+    usingdb("caja");
+    usingdb("localidadproducto");
+    
     class DCompra extends Model{
  
         public function listar($o){
@@ -25,7 +28,27 @@
                 $sql.=" and date_format(a.fecha_hora_creacion,'%Y-%m-%d') between  '$o->desde' and  '$o->hasta'";
             }
             $sql.=" and ('$o->usuariocreador'='X' or a.usuario_creacion='$o->usuariocreador')";
-            $sql.=" and ('$o->numero'='' or a.numero='$o->numero')";
+            $sql.=" and ('$o->nombre'='' or (a.numero='$o->nombre' or e.nombre like '%$o->nombre%'))";
+            $sql.=" order by a.fecha_hora_creacion desc";
+             
+           
+            $this->sqlread($sql);
+             
+        }
+        public function listarPendiente($o){
+            $sql="
+            SELECT a.id, date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_hora_creacion,
+            concat(b.nombre_corto,' ',a.numero) as numero,e.nombre AS proveedor_nombre,
+            c.nombre AS localidad_nombre,
+            d.nombre AS usuario_nombre,
+            e.nombre as proveedor_nombre,
+            a.total,a.pago,a.saldo
+            FROM compra AS a
+            INNER JOIN tipocomprobante AS b ON b.id=a.tipocomprobanteid
+            INNER JOIN localidad AS c ON c.id=a.localidadid
+            INNER JOIN usuario AS d ON d.id=a.usuario_creacion
+            inner join proveedor as e on e.id=a.proveedorid 
+             WHERE a.activo=1 and a.saldo>0 and e.nombre like '%$o->nombre%' ";
             $sql.=" order by a.fecha_hora_creacion desc";
              
            
@@ -46,11 +69,13 @@
             INNER JOIN proveedor AS e ON e.id=a.proveedorid
             WHERE a.id='$o->id'";
            
-            $sqldet="SELECT descripcion,cantidad,precio,importe
-            FROM compra_detalle
-            where compraid='$o->id'
-            and activo=1
-            ORDER BY correlativo,fecha_hora_creacion";
+            $sqldet="SELECT a.descripcion,a.cantidad,a.precio,a.importe,b.stock,
+            case when (select count(1) from producto_destino as c where c.productoid=b.id and activo=1) >0 then 'SI' else 'NO' end as destino
+            FROM compra_detalle a
+            inner join producto as b on b.id=a.productoid
+            where a.compraid='$o->id'
+            and a.activo=1
+            ORDER BY a.correlativo,a.fecha_hora_creacion";
 
             $sqlpag="SELECT descripcion,pago
             FROM compra_pago
@@ -116,7 +141,7 @@
             FROM compra_destino AS a
             INNER JOIN producto AS b ON b.id=a.productoid
             INNER JOIN producto AS c ON c.id=a.destinoid
-            left join localidad_producto as d on d.localidadid=a.localidadid and a.productoid=a.destinoid
+            left join localidad_producto as d on d.localidadid=a.localidadid and d.productoid=a.destinoid
             WHERE a.localidadid='$localidadid' and a.activo=1
             AND a.id = '$o->id'";
 
@@ -191,6 +216,44 @@
             if($row["stock"]=="SI"){
                 $this->gotoError("El destino no tiene habilitado stock");
             }
+        }
+        public function registrarPago($o){
+            $usuarioid=auth::user();
+            $localidadid=auth::local();
+            $hoy=now();
+            $o->id=Guid();
+            $cta=$this->sqlrow("select id,nombre,saldo from cuenta where id='$o->cuentaid'");
+            $com=$this->sqlrow("select id,proveedorid,correlativo,saldo from compra where id='$o->compraid'");
+            $prv=$this->sqlrow("select id,nombre from proveedor where id='".$com["proveedorid"]."'");
+
+            $o->descripcion=$cta["nombre"];
+
+            $sql=db_compra_pago_insertar(1,$o->compraid,$localidadid,$o->cuentaid,$cta["nombre"],$o->pago,$usuarioid,$hoy);
+            $array = array($sql); 
+
+            $odet=new ECuentaDetalle();
+            $odet->tipo="SAL";
+            $odet->descripcion="PAGO A ".$prv["nombre"];
+            $odet->monto=$o->pago*-1;
+            $odet->saldo=$cta["saldo"]+$odet->monto;
+            $odet->cuentaid= $o->cuentaid;
+            $sql=$this->sqlInsert("cuenta_detalle",$odet); 
+            array_push($array,$sql);
+
+            $sql=$this->sqlUpdateSum("cuenta",$o->cuentaid,"saldo",$odet->monto);
+            array_push($array,$sql);
+ 
+            $sql="update compra set pago=(select ifnull(sum(pago),0) from compra_pago where compraid=compra.id) where id='$o->compraid'";
+            array_push($array,$sql);
+
+            $sql="update compra set saldo=total-pago,
+            usuario_modificacion='$usuarioid',
+            fecha_hora_modificacion=$hoy
+            where id='$o->compraid'";
+            array_push($array,$sql);
+            
+            $this->db->transacm($array,"Se pagó un servicio correctamente");
+           
         }
     }
 ?>

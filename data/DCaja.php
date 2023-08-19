@@ -3,7 +3,33 @@ usingdb("localidad");
 usingdb("caja");
     class DCaja extends Model{
         private $table="caja";
-
+        public function listar($o){
+            $localidadid=auth::local();
+            $sql="
+            SELECT a.id,date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_hora_creacion,a.numero,
+            b.nombre AS localidad_nombre,
+            c.nombre AS usuario_nombre,a.saldo_inicial, a.saldo,
+            case when a.estado='A'  then 'ABIERTO' ELSE 'CERRADO' END AS estado
+            FROM caja AS a
+            INNER JOIN localidad AS b ON b.id=a.localidadid
+            INNER JOIN usuario AS c ON c.id=a.usuarioid
+             WHERE a.activo=1";
+          
+            if($o->tipo=="M"){
+                $sql.=" and date_format(a.fecha_hora_creacion,'%Y') = '$o->anio'
+                and date_format(a.fecha_hora_creacion,'%m') = '$o->mes'";
+            }
+            else{
+                $sql.=" and date_format(a.fecha_hora_creacion,'%Y-%m-%d') between  '$o->desde' and  '$o->hasta'";
+            }
+            $sql.=" and ('$o->usuariocreador'='X' or a.usuario_creacion='$o->usuariocreador')";
+            $sql.=" and ('$o->nombre'='' or a.numero='$o->nombre')";
+            $sql.=" order by a.fecha_hora_creacion desc";
+             
+           
+            $this->sqlread($sql);
+             
+        }
         public function aperturar($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
@@ -33,6 +59,10 @@ usingdb("caja");
                 $det->descripcion="SALDO INICIAL";
                 $det->monto=$o->saldo_inicial;
                 $det->saldo=$o->saldo_inicial;
+
+                if($det->saldo<=0){
+                   // $this->gotoError("No puede aperturar caja con saldo cero");
+                }
     
                 $sqlCrearcaja=$this->sqlInsert($this->table,$o);
                 $sqlInsertarDetalle=$this->sqlInsert("caja_detalle",$det); 
@@ -231,8 +261,13 @@ usingdb("caja");
              $row=$dt[0];
              $cajaid=$row["id"];
              $saldo=$row["saldo"];
+
              if($o->monto>$saldo){
                 $message="El monto ingresado es mayor al saldo";
+                $this->gotoError($message);
+             }
+             if($o->monto<=0){
+                $message="El monto a reservar debe ser mayor a cero";
                 $this->gotoError($message);
              }
              $hoy=now();
@@ -252,7 +287,7 @@ usingdb("caja");
             $cuenta=$this->cuentaCaja();
             $odet=new ECuentaDetalle();
             $odet->tipo="SAL";
-            $odet->descripcion="TRANSFERENCIA POR CIERRE ";
+            $odet->descripcion="RESERVA CAJA";
             $odet->monto=$o->monto*-1;
             $odet->saldo=$cuenta["saldo"]+$odet->monto;
             $odet->cuentaid= $cuenta["id"];
@@ -286,17 +321,14 @@ usingdb("caja");
 
             $data["cabecera"]=$this->sqlgetrow($sql);
             $cajaid=$data["cabecera"]["id"];
-            $sqldet="SELECT 
-            DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-            a.descripcion,a.monto,a.saldo,a.tipo
-            FROM caja_detalle AS a
-            WHERE a.cajaid='$cajaid'
-            and a.activo=1
-            ORDER BY a.fecha_hora_creacion DESC
-            LIMIT 0,100";
-
+    
            
-            $data["detalle"]=$this->sqldata($sqldet);
+            $data["detalle"]=$this->sqldata(db_caja_detalle_listar($cajaid));
+            $this->gotoSuccessData($data);
+        }
+        public function obtenerDetalleCierre($o){
+            $data["cabecera"]=$this->sqlrow(db_caja_obtener($o->id));
+            $data["detalle"]=$this->sqldata(db_caja_cierre_listar($o->id));
             $this->gotoSuccessData($data);
         }
         public function obtenerPreCierre(){
@@ -315,7 +347,7 @@ usingdb("caja");
            
             $data["detalle"]=$this->sqldata(db_caja_pre_cierre_detalle($cajaid));
             $data["impresora"]=$this->sqlrow(db_localidad_impresora_obtener($localidadid));
-             
+            $data["movimiento"]=$this->sqldata(db_caja_detalle_listar($cajaid));
            return $data;
         }
         public function finalizar(){
@@ -343,7 +375,23 @@ usingdb("caja");
              UNION ALL
              SELECT UUID() AS id,'$cajaid' as cajaid,'SALDO CAJA' AS nombre,1 AS cantidad, a.saldo AS monto ,1
              FROM caja AS a
-             WHERE a.id='$cajaid' AND a.activo=1";
+             WHERE a.id='$cajaid' AND a.activo=1
+             union all 
+            select uuid(),'$cajaid' as cajaid,concat('VENTA ',e.nombre),count(a.cuentaid) as cantidad,sum(a.pago) as monto,1
+            from venta_pago as a 
+            inner join venta as b on b.id=a.ventaid
+            inner join pedido as c on c.id=b.pedidoid
+            inner join cuenta as d on d.id=a.cuentaid
+            inner join formapago as e on e.id=d.formapagoid  
+            where b.cajaid='$cajaid'
+            group by e.nombre
+            UNION ALL
+            select uuid(),'$cajaid' as cajaid,'TOTAL VENTA',count(a.cuentaid) as cantidad,sum(a.pago) as monto ,1
+            from venta_pago as a 
+            inner join venta as b on b.id=a.ventaid
+            where b.cajaid='$cajaid'
+             
+             ";
 
              $sqlCambiarEstadoCaja="update caja set estado='C',fecha_hora_modificacion= $hoy where id='$cajaid'";
 
@@ -385,6 +433,31 @@ usingdb("caja");
             );
             $this->db->transacm($array,"Se cerró caja con éxito");
         } 
+        public function obtenerFiltros(){
+            $hoy=now();
+            
+            $sqlmes =" SELECT id,nombre from mes order by id";
+            $sqlmesactual="SELECT date_format($hoy,'%m') AS mes";
+            $sqlanio="SELECT distinct DATE_FORMAT(fecha_hora_creacion,'%Y') AS id,DATE_FORMAT(fecha_hora_creacion,'%Y') AS nombre FROM caja";
+            $sqlusuario="SELECT id,nombre FROM usuario WHERE id IN (SELECT usuario_creacion FROM caja WHERE activo=1) AND activo=1";
+            $sqlanioactual="SELECT date_format($hoy,'%Y') AS id,date_format($hoy,'%Y') as nombre";
+
+            $anios=$this->sqldata($sqlanio);
+            $anioactual=$this->sqlgetrow($sqlanioactual);
+            if(count($anios)==0){
+                $anios[0]=$anioactual;
+            }
+         
+            $data["usuarios"]=$this->sqldata($sqlusuario);
+            $data["meses"]=$this->sqldata($sqlmes);
+            $data["anios"]=$anios;
+            $data["mesactual"]=$this->sqlgetrow($sqlmesactual)["mes"] ;
+            $data["anioactual"]= $anioactual["id"] ;
+            $data["personas"]=$this->sqldata($sqlusuario);
+            $data["localidad"]=$this->sqldata(db_localidad_listar());
+            $this->gotoSuccessData($data); 
+            
+        }
 
     }
 ?>

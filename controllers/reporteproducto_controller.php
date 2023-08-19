@@ -65,6 +65,21 @@ class reporteproducto extends Controller{
         $pdf->setTable($data,$head,$field,$align,$width);
         $pdf->download("reporte_producto_instantaneo");
     }
+    public function listarProductoConInsumo(){
+        http::role(REPORTE_PRODUCTO);
+        http::post();
+        $d=new DReporteProducto();
+        $data = $d->listarProductoConInsumo();
+        $pdf = new PDF();
+        $pdf->setTitle("PRODUCTOS CON INSUMO");
+       
+        $head = array('PRODUCTO');
+        $align=array('L');
+        $field = array('nombre');
+        $width= array(190);
+        $pdf->setTable($data,$head,$field,$align,$width);
+        $pdf->download("reporte_productos_con_insumo");
+    }
 }
 
 ?>

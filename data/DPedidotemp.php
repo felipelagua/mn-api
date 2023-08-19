@@ -1,8 +1,12 @@
-    <?php
+<?php
     usingdb("tipopedido");
     usingdb("ubicacion");
     usingdb("pedido");
     usingdb("localidad");
+    usingdb("producto");
+    usingdb("caja");
+    usingdb("localidadproducto");
+    
         class DPedidotemp extends Model{
             private $table="pedido";
             private function validarCajaAbierta(){
@@ -45,81 +49,26 @@
 
             public function listar($o){
                 $localidadid=auth::local();
-                $sql="select a.id,a.tipocomprobanteid,a.clienteid, a.total,a.pago,a.saldo,
-                ifnull(b.nombre,'CLIENTE GENERICO') as cliente_nombre,
-                ifnull(b.direccion,'SIN DIRECCION') as direccion,
-                ifnull(c.nombre_corto,'SIN COMPROBANTE') as tipocomprobante_nombre,
-                a.tipopedido,d.nombre AS tipopedido_nombre,
-                a.ubicacionid,ifnull(e.nombre,'SIN UBICACION') as ubicacion_nombre,
-                DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-                f.nombre as usuario_nombre,
-                CONCAT('# ',a.numero,' - ',d.nombre) as numero
-                from pedido as a
-                INNER JOIN tipopedido as d ON d.clave=a.tipopedido
-                left join cliente as b on b.id=a.clienteid
-                left join tipocomprobante as c on c.id=a.tipocomprobanteid
-                LEFT JOIN ubicacion AS e ON e.id=a.ubicacionid
-                left join usuario as f on f.id=a.usuario_creacion
-                where a.localidadid='$localidadid'  
-                and a.activo=1 and ifnull(a.emitido,'')=''
-                order by a.fecha_hora_creacion desc";
-                $this->sqlread($sql);
+                $dt=$this->sqldata(db_pedido_listar($localidadid));
+                $index=0;
+                foreach($dt as $cab){
+                    $dt[$index]["detalle"]= $this->sqldata(db_pedido_detalle_listar($localidadid,$cab["id"]));
+                    $index++;
+                }
+                $this->gotoSuccessData($dt);
             }
             public function obtener($o){
                 $this->validarLocal();
                 $usuarioid=auth::user();
                 $localidadid=auth::local();
     
-                $sql="select a.id,a.tipocomprobanteid,a.clienteid,a.numero,a.total,a.pago,a.saldo,
-                ifnull(b.nombre,'CLIENTE GENERICO') as cliente_nombre,
-                ifnull(b.direccion,'SIN DIRECCION') as direccion,
-                ifnull(c.nombre_corto,'SIN COMPROBANTE') as tipocomprobante_nombre,
-                a.tipopedido,d.nombre AS tipopedido_nombre,
-                a.ubicacionid,ifnull(e.nombre,'SIN UBICACION') as ubicacion_nombre,
-                DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-                f.nombre as usuario_nombre,'S/' AS moneda
-                from pedido as a
-                INNER JOIN tipopedido as d ON d.clave=a.tipopedido
-                left join cliente as b on b.id=a.clienteid
-                left join tipocomprobante as c on c.id=a.tipocomprobanteid
-                LEFT JOIN ubicacion AS e ON e.id=a.ubicacionid
-                left join usuario as f on f.id=a.usuario_creacion
-                where a.localidadid='$localidadid' 
-                and a.id='$o->id'
-                and a.activo=1";
+                $sql=db_pedido_obtener($localidadid,$o->id);
+                $sqldet=db_pedido_detalle_listar($localidadid,$o->id);
+                $sqlpago=db_pedido_pago_listar($localidadid,$o->id);
 
-                $sqldet=" select id,productoid,descripcion,cantidad,precio,importe
-                from pedido_detalle
-                where localidadid='$localidadid' 
-                and pedidoid='$o->id'
-                and activo=1";
-                
                 $sqltipocomprobante="select id,nombre,nombre_corto from tipocomprobante where activo=1 order by nombre";
 
-            
-                $sqlpago=" select a.id,a.cuentaid,a.descripcion,a.monto,a.pago,a.vuelto,c.nombre as formapago_nombre,c.caja
-                from pedido_pago as a
-                inner join cuenta as b on b.id=a.cuentaid
-                inner join formapago as c on c.id=b.formapagoid
-                where a.localidadid='$localidadid' 
-                and a.pedidoid='$o->id'
-                and a.activo=1
-                order by a.fecha_hora_creacion asc";
-
-                $sqlcuenta="select a.id,a.nombre,b.caja,b.nombre as formapago_nombre
-                from cuenta a
-                INNER JOIN formapago AS b ON b.id=a.formapagoid
-                where a.usuarioid='$usuarioid' 
-                and a.activo=1 and b.caja='SI'
-                union all
-                SELECT a.id,a.nombre,b.caja,b.nombre as formapago_nombre
-                FROM cuenta AS a
-                INNER JOIN formapago AS b ON b.id=a.formapagoid
-                WHERE a.venta='SI' AND b.caja='NO'
-                AND a.activo=1";
-
-               
-
+                 
                 $cab= new EPedidotemp($this->sqlgetrow($sql));
                 if($cab->tipocomprobanteid==""){ $cab->tipocomprobanteid="X";}
                 if($cab->total==""){ $cab->total="0.00";}
@@ -129,9 +78,10 @@
                 $data["detalle"]=$this->sqldata($sqldet);
                 $data["pago"]=$this->sqldata($sqlpago);
                 $data["tipocomprobante"]=$this->sqldata($sqltipocomprobante);
-                $data["cuenta"]=$this->sqldata($sqlcuenta);
+                $data["cuenta"]=$this->sqldata(db_pedido_cuenta_listar($usuarioid));
                 $data["filename"]="MNPED";
                 $data["impresora"]=$this->sqlrow(db_localidad_impresora_obtener($localidadid));
+                
                 $this->gotoSuccessData($data); 
             }
             public function nuevo($o){
@@ -144,7 +94,6 @@
                 $o->pago=0.00;
                 $o->saldo=0.00;
                 $o->tipocomprobanteid="";
-                $o->clienteid="";
                 $o->numero=$this->obtenerNumero();
 
                 switch($o->tipopedido){
@@ -165,7 +114,7 @@
                 $this->gotoSuccess("Se grabaron los datos con éxito",$o->id);
             }
             private function validar(){
-
+  
             } 
             private function obtenerNumero(){
                 $row=$this->sqlrow(db_pedido_obtener_nuevo_numero());
@@ -215,27 +164,16 @@
                 $this->sqlread($sql);
             }
             public function buscarProducto($o){
-
-                $sql=" select id as productoid,nombre as descripcion,1 as cantidad ,precio_venta as precio
-                from producto 
-                where activo=1 
-                and  venta='SI'
-                and nombre like  '%".$o->nombre."%'
-                order by nombre";
-                $this->sqlread($sql);
+                $localidadid=auth::local();   
+                $this->sqlread(db_producto_stock_buscar($localidadid,$o->nombre));
             }
-            public function listarDetalle(){
-                $usuarioid=auth::user();
+            public function buscarProductoNombre($o){
+                $localidadid=auth::local();   
+                $this->sqlread(db_producto_stock_buscar_nombre($localidadid,$o->nombre));
+            }
+            public function listarDetalle($o){
                 $localidadid=auth::local();
-
-                $sqldet=" select id,productoid,descripcion,cantidad,precio,importe
-                from ".$this->table."_detalle
-                where localidadid='$localidadid' 
-                and usuario_creacion='$usuarioid'
-                and activo=1
-                order by fecha_hora_creacion desc";
-
-                $data["detalle"]=$this->sqldata($sqldet);
+                $data["detalle"]=$this->sqldata(db_pedido_detalle_listar($localidadid,$o->id));
                 $this->gotoSuccessData($data); 
             }
             public function registrarDetalle($o){
@@ -319,6 +257,7 @@
                 $localidadid=auth::local();
                 $sql=" select id from ".$this->table."_detalle
                 where localidadid='$localidadid' and productoid='$o->productoid'
+                and pedidoid='$o->pedidoid'
                 and usuario_creacion='$usuarioid' ";
                 $dt=$this->sqldata($sql);
                 if(count($dt)>0){
@@ -349,17 +288,7 @@
 
             public function listarPago($o){
                 $localidadid=auth::local();
-
-                $sqlpago=" select a.id,a.cuentaid,a.descripcion,a.monto,a.pago,a.vuelto,c.nombre as formapago_nombre,c.caja
-                from pedido_pago as a
-                inner join cuenta as b on b.id=a.cuentaid
-                inner join formapago as c on c.id=b.formapagoid
-                where a.localidadid='$localidadid' 
-                and a.pedidoid ='$o->id'
-                and a.activo=1
-                order by a.fecha_hora_creacion asc";
-
-                $data["pago"]=$this->sqldata($sqlpago);
+                $data["pago"]=$this->sqldata(db_pedido_pago_listar($localidadid,$o->id));
                 $this->gotoSuccessData($data); 
             }
             public function listarPagoCuenta(){
@@ -391,6 +320,8 @@
                 and usuario_creacion='$usuarioid' ";
 
                 $array = array($sql);
+
+
                 array_push($array,$this->actualizarTotal($o));
                 $this->db->transacx($array);
 
@@ -422,7 +353,7 @@
                 $usuarioid=auth::user();
                 $sql="select id,nombre,saldo
                 from cuenta
-                where usuarioid='$usuarioid'
+                where (usuarioid='$usuarioid' or venta='SI')
                 and id='$o->cuentaid'
                 and activo=1";
                 $dt=$this->sqldata($sql);
@@ -431,11 +362,24 @@
                     $this->gotoError($message);
                 }
                 $row=$dt[0];
+                /*
                 if($o->pago>$row["saldo"]){
                     $message="El pago es mayor al saldo de la cuenta seleccionada";
                     $this->gotoError($message);
                 }
+                */
                 return $row;
+            }
+            
+            private function obtenerCajaid(){
+                $usuarioid=auth::user();
+                $localidadid=auth::local();
+                $dt=$this->sqldata(db_caja_abierta_obtener($localidadid,$usuarioid));
+                $cajaid="";
+                if(count($dt)>0){
+                    $cajaid=$dt[0]["id"];
+                }
+                return $cajaid;
             }
             function finalizar($o){
                 $this->validarLocal();
@@ -451,7 +395,7 @@
                 a.tipopedido,d.nombre AS tipopedido_nombre,
                 a.ubicacionid,ifnull(e.nombre,'SIN UBICACION') as ubicacion_nombre,
                 DATE_FORMAT(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') AS fecha_hora,
-                f.nombre as usuario_nombre
+                f.nombre as usuario_nombre,a.emitido
                 from pedido as a
                 INNER JOIN tipopedido as d ON d.clave=a.tipopedido
                 left join cliente as b on b.id=a.clienteid
@@ -486,14 +430,24 @@
                 $dtdet=$this->sqldata($sqldet);
                 $dtpag=$this->sqldata($sqlpag);
                 
+                $sqlv="select id,numero from venta where pedidoid='$o->id' and activo=1";
+                $dtv=$this->sqldata($sqlv);
+                 $details = array(); 
+                if(count($dtv)>0){
+                    $venta_numero=$dtv[0]["numero"];
+                    array_push($details,"El pedido ya se encuentra registrado en la venta $venta_numero");
+                    $this->gotoErrorDetails("Ocurrieron algunos errores",$details); 
+                }
+                
                 $this->validarFinalizar($dtcab,$dtdet,$dtpag);
 
                 $cab=$dtcab[0];
                 $id=Guid();
 
+                $cajaid=$this->obtenerCajaid();
                 $sql=" 
-                insert into venta(id,numero,localidadid,tipocomprobanteid,clienteid,pedidoid,total,pago,saldo,activo,usuario_creacion,fecha_hora_creacion)
-                select '$id', (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from venta),'$localidadid','".$cab["tipocomprobanteid"]."',
+                insert into venta(id,cajaid,numero,localidadid,tipocomprobanteid,clienteid,pedidoid,total,pago,saldo,activo,usuario_creacion,fecha_hora_creacion)
+                select '$id','$cajaid', (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from venta),'$localidadid','".$cab["tipocomprobanteid"]."',
                 '".$cab["clienteid"]."',
                 '".$cab["id"]."',
                 '".$cab["total"]."',
@@ -506,6 +460,7 @@
 
                 $sql="update pedido set emitido='SI' where id='$o->id'";
                 array_push($array,$sql);
+
                 foreach($dtdet as $det){
                     $productoid=$det["productoid"];
                     $cantidad=$det["cantidad"];
@@ -527,70 +482,74 @@
                         $cantidad_stock= $det["stock_actual"];    
                     
                         $tipo="SAL";
-                        $descripcion = "PED ".$cab["numero"]." - VENTA";
-
-                        
-                            $saldo_monto_stock_actual=$precio_stock*$cantidad_stock;
-                            $saldo_monto_stock__stock_nuevo = $precio_stock*$cantidad;
-
-                            $saldo_monto_total=$saldo_monto_stock_actual+$saldo_monto_stock__stock_nuevo;
-                            $cantidad_stock=$det["stock_actual"] + $cantidad;
+                        $descripcion = "NRO ".$cab["numero"]." - VENTA";                        
+                        $saldo_monto_stock_actual=$precio_stock*$cantidad_stock;
+                        $saldo_monto_stock__stock_nuevo = $precio_stock*$cantidad;
+                        $saldo_monto_total=$saldo_monto_stock_actual+$saldo_monto_stock__stock_nuevo;
+                        $cantidad_stock=$det["stock_actual"] + $cantidad;
                             
                        
-                        
-                        $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,usuario_creacion,fecha_hora_creacion)
-                        values(uuid(),'$localidadid','$productoid','$descripcion','$tipo', '$cantidad' ,'$cantidad_stock','$precio_stock',1,'$usuarioid',$hoy)";
+                        $sql=db_localidad_producto_insertar_caja($localidadid,$cajaid,$productoid,$descripcion,$tipo,$cantidad,$cantidad_stock,$precio_stock,$usuarioid,$hoy); 
                         array_push($array,$sql);
 
-                        $sql="update localidad_producto set
-                        cantidad= '$cantidad_stock' , precio='$precio_stock',
-                        usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
-                        where localidadid='$localidadid' and productoid='$productoid' ";
+                        $sql=db_localidad_producto_actualizar($localidadid,$productoid,$cantidad_stock,$precio_stock,$usuarioid,$hoy);
                         array_push($array,$sql);
                     }
                     else{
-                        $sqldes = "select a.id,a.itemid as productoid,b.nombre AS descripcion,a.cantidad,
-                            case when c.id is null then 'N' else 'S' end as locprod,
-                            case when c.cantidad is null then 0 else c.cantidad end as stock_actual,
-                            b.stock,ifnull(c.precio,0.00) as precio_stock
-                            FROM producto_insumo AS a
-                            inner join producto as b on b.id=a.itemid
-                            left join localidad_producto as c on c.productoid=a.itemid and c.localidadid='$localidadid'
-                            WHERE a.productoid = '".$det["productoid"]."'
-                            AND a.activo = 1";
-
-                        $dtdes=$this->sqldata($sqldes);
+                        
+                        $dtins=$this->sqldata(db_producto_insumo_listar($localidadid,$det["productoid"]));
                         $cantidad = $cantidad*-1;
-                        if(count($dtdes)>0){
-                            foreach($dtdes as $des){
-                                $itemid=$des["productoid"];
-                                $precio_stock=$des["precio_stock"];
-                                $cantidad_stock= $des["stock_actual"];  
+                        if(count($dtins)>0){
+                            foreach($dtins as $ins){
+                                $itemid=$ins["productoid"];
+                                $precio_stock=$ins["precio_stock"];
+                                $cantidad_stock= $ins["stock_actual"];  
                             
-                                if($des["stock"]=="SI"){
-                                    if($des["cantidad"]>0){       
-                                        $cantidad=$des["cantidad"]*$det["cantidad"]*-1;
+                                if($ins["stock"]=="SI"){
+                                    if($ins["cantidad"]>0){       
+                                        $cantidad=$ins["cantidad"]*$det["cantidad"]*-1;
                                         
                                         $saldo_monto_stock_actual=$precio_stock*$cantidad_stock;
                                         $saldo_monto_stock__stock_nuevo = $precio*$cantidad;
                                         $saldo_monto_total=$saldo_monto_stock_actual+$saldo_monto_stock__stock_nuevo;
-                                        $cantidad_stock=$des["stock_actual"] + $cantidad;
+                                        $cantidad_stock=$ins["stock_actual"] + $cantidad;
                                         $precio_stock= $saldo_monto_total/$cantidad_stock;                                        
- 
-                                        $nuevo_saldo=$des["stock_actual"] + $cantidad;
-                                        $tipo="ING";
-                                        $descripcion = "CO ".$cab["tipocomprobante_nombre"]."-".$cab["numero"]." - SALIDA POR VENTA: ".$cab["cliente_nombre"]." - PRODUCTO: ".$det["descripcion"];
-                                        $sql="insert into localidad_producto_detalle(id,localidadid,productoid,descripcion,tipo,cantidad,saldo,precio,activo,
-                                        usuario_creacion,fecha_hora_creacion)
-                                        values(uuid(),'$localidadid','".$itemid."','$descripcion','$tipo', '$cantidad','$nuevo_saldo','$precio_stock',1,'$usuarioid',$hoy)";
+  
+                                        $tipo="SAL";
+                                        $descripcion = "PED. ".$cab["numero"]." - SALIDA POR VENTA: ".$cab["cliente_nombre"]." - PRODUCTO: ".$det["descripcion"];
+  
+                                        $sql=db_localidad_producto_insertar_caja($localidadid,$cajaid,$productoid,$descripcion,$tipo,$cantidad,$cantidad_stock,$precio_stock,$usuarioid,$hoy); 
                                         array_push($array,$sql);
-                    
-                                        $sql="update localidad_producto set
-                                        cantidad=$nuevo_saldo , 
-                                        precio='$precio_stock',
-                                        usuario_modificacion='$usuarioid', fecha_hora_modificacion=$hoy
-                                        where localidadid='$localidadid' and productoid='".$itemid."' ";
+                                        
+                                        $sql=db_localidad_producto_actualizar($localidadid,$itemid,$cantidad_stock,$precio_stock,$usuarioid,$hoy);
                                         array_push($array,$sql);
+                                    } 
+                                }
+                                else{
+                                    /*insumo nivel 2*/
+                                    $dtins2=$this->sqldata(db_producto_insumo_listar($localidadid,$itemid));
+                                    if(count($dtins2)>0){
+                                        foreach($dtins2 as $ins2){
+                                            $itemid2=$ins2["productoid"];
+                                            if($ins2["stock"]=="SI" && $ins2["cantidad"]>0){
+                                                $cantidad=$ins2["cantidad"]*$ins["cantidad"]*$det["cantidad"]*-1;
+                                        
+                                                $saldo_monto_stock_actual=$precio_stock*$cantidad_stock;
+                                                $saldo_monto_stock__stock_nuevo = $precio*$cantidad;
+                                                $saldo_monto_total=$saldo_monto_stock_actual+$saldo_monto_stock__stock_nuevo;
+                                                $cantidad_stock=$ins2["stock_actual"] + $cantidad;
+                                                $precio_stock= $saldo_monto_total/$cantidad_stock;                                        
+          
+                                                $tipo="SAL";
+                                                $descripcion = "PED ".$cab["numero"]." - SALIDA POR VENTA: ".$cab["cliente_nombre"]." - PRODUCTO: ".$det["descripcion"]." - INSUMO: ".$ins["descripcion"];
+          
+                                                $sql=db_localidad_producto_insertar($localidadid,$itemid2,$descripcion,$tipo,$cantidad,$cantidad_stock,$precio_stock,$usuarioid,$hoy); 
+                                                array_push($array,$sql);
+        
+                                                $sql=db_localidad_producto_actualizar($localidadid,$itemid2,$cantidad_stock,$precio_stock,$usuarioid,$hoy);
+                                                array_push($array,$sql);
+                                            }
+                                        }
                                     }
                                     
                                 }
@@ -627,9 +586,9 @@
                     }
 
                     $odet=new ECuentaDetalle();
-                    $odet->tipo="SAL";
+                    $odet->tipo="ING";
                     $odet->descripcion=$descripcion;
-                    $odet->monto=$pag["pago"]*-1;
+                    $odet->monto=$pag["pago"];
                     $odet->saldo=$pag["saldo_cuenta"]+$odet->monto;
                     $odet->cuentaid= $pag["cuentaid"];
                     $sql=$this->sqlInsert("cuenta_detalle",$odet); 
@@ -651,75 +610,78 @@
                     array_push($details,"No hay una pedido pendiente para grabar");
                 }
                 else{
-                    $tipopedido=$dtcab[0]["tipopedido"];
-                    $clienteid=$dtcab[0]["clienteid"];
-                    $ubicacionid=$dtcab[0]["ubicacionid"];
-                    $direccion=$dtcab[0]["direccion"];
-                    $saldo=$dtcab[0]["saldo"];
-                    
-                    if(!isGuid($clienteid)){
-                        array_push($details,"Debe seleccionar un cliente");
-                    }
+                    $cab=$dtcab[0];
+                    $emitido=$cab["emitido"];
+                    if($emitido!="SI"){
+                        $tipopedido=$cab["tipopedido"];
+                        $ubicacionid=$cab["ubicacionid"];
+                        $direccion=$cab["direccion"];
+                        $saldo=$cab["saldo"];
+                        switch($tipopedido){
+                            case EN_MESA:
+                                if(!isGuid($ubicacionid)){
+                                    array_push($details,"Debe ingresar una ubicación");
+                                }
+                                break;
+                            case DELIVERY:
+                                if($direccion==""){
+                                    array_push($details,"El cliente debe tener una direccion");
+                                }
+                                break;
+                        }
 
-                    switch($tipopedido){
-                        case DELIVERY:
-                            if(!isGuid($ubicacionid)){
-                                array_push($details,"Debe ingresar una ubicación");
-                            }
-                            break;
-                        case DELIVERY:
-                            if($direccion==""){
-                                array_push($details,"El cliente debe tener una direccion");
-                            }
-                            break;
-                    }
-
-                   
-                    
-                }
-                if(count($dtdet)==0){
-                    array_push($details,"Debe haber por lo menos un producto");
-                }
-                else{
-                    foreach($dtdet as $row){
-                        if($row["stock"]=="SI"){
-                            if($row["cantidad"]>$row["stock_actual"]){
-                                array_push($details,"El producto ".$row["descripcion"]." no tiene stock suficiente");
-                            }
+                        if(count($dtdet)==0){
+                            array_push($details,"Debe haber por lo menos un producto");
                         }
                         else{
-                            $sql = "select a.id,a.itemid as productoid,b.nombre AS descripcion,a.cantidad,
-                            case when c.id is null then 'N' else 'S' end as locprod,
-                            case when c.cantidad is null then 0 else c.cantidad end as stock_actual,
-                            b.stock,ifnull(c.precio,0.00) as precio_stock
-                            FROM producto_insumo AS a
-                            inner join producto as b on b.id=a.itemid
-                            left join localidad_producto as c on c.productoid=a.itemid and c.localidadid='$localidadid'
-                            WHERE a.productoid = '".$row["productoid"]."'
-                            AND a.activo = 1";
-                            $dtins=$this->sqldata($sql);
-
-                            foreach($dtins as $ins){
-                                if($ins["stock"]=="SI"){
-                                    if($row["cantidad"]*$ins["cantidad"] >$ins["stock_actual"]){
-                                        array_push($details,$row["descripcion"].": El insumo ".$ins["descripcion"]." no tiene stock suficiente");
+                            foreach($dtdet as $row){
+                                if($row["stock"]=="SI"){
+                                    if($row["cantidad"]>$row["stock_actual"]){
+                                        array_push($details,"El producto ".$row["descripcion"]." no tiene stock suficiente");
                                     }
+                                }
+                                else{
+        
+                                    $dtins=$this->sqldata(db_producto_insumo_listar($localidadid,$row["productoid"]));
+                                    foreach($dtins as $ins){
+                                        $cantins=$row["cantidad"]*$ins["cantidad"];
+                                        if($ins["stock"]=="SI"){
+                                            
+                                            if($cantins >$ins["stock_actual"] || $ins["stock_actual"]==0){        
+                                               array_push($details,$row["descripcion"].": El insumo ".$ins["descripcion"]." no tiene stock suficiente, debe tener al menos $cantins");                                    
+                                            }               
+                                        }
+                                        else{
+                                            $dtins2=$this->sqldata(db_producto_insumo_listar($localidadid,$ins["productoid"]));
+                                            foreach($dtins2 as $ins2){
+                                                if($ins2["stock"]=="SI"){
+                                                    $cant=$row["cantidad"]*$ins["cantidad"]*$ins2["cantidad"];
+                                                    if($cant >$ins2["stock_actual"] || $ins2["stock_actual"]==0){        
+                                                        array_push($details,$row["descripcion"].": Insumo ".$ins["descripcion"]." ".$cantins.", Subinsumo ".$ins2["descripcion"]." no tiene stock suficiente, debe tener al menos $cant");                                    
+                                                    }              
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+        
+                            }
+        
+                            if(count($dtpag)==0){
+                                array_push($details,"Debe haber por lo menos un pago");
+                            }
+                            else{
+                                if($saldo>0){
+                                    array_push($details,"El pago debe ser igual al total de la pedido");
                                 }
                             }
                         }
                     }
-
-
-
-                    if(count($dtpag)==0){
-                        array_push($details,"Debe haber por lo menos un pago");
-                    }
                     else{
-                        if($saldo>0){
-                            array_push($details,"El pago debe ser igual al total de la pedido");
-                        }
+                        array_push($details,"El pedido ya fue finalizado");
                     }
                 }
+                
                 if(count($details)){
                     $this->gotoErrorDetails("Ocurrieron algunos errores",$details); 
                 }

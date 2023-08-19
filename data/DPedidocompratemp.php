@@ -1,6 +1,6 @@
 <?php
     class DPedidocompratemp extends Model{
-        private $table="Pedidocompratemp";
+        private $table="pedidocompratemp";
          
         public function obtener(){
             $usuarioid=auth::user();
@@ -31,7 +31,7 @@
             $hoy=now();
             $sqltable="";
              if(!$this->existe()){
-                $sqltable="insert into Pedidocompratemp(id,localidadid,activo,usuario_creacion,fecha_hora_creacion)
+                $sqltable="insert into pedidocompratemp(id,localidadid,activo,usuario_creacion,fecha_hora_creacion)
                 values('$o->id','$localidadid',1,'$usuarioid',".$hoy.")";
                 $this->db->execute($sqltable);
              }
@@ -137,7 +137,7 @@
         
             $hoy=now();
             $sql=" select a.id, 
-            (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from Pedidocompra) as numero
+            (SELECT ifnull(max(cast(numero AS SIGNED INTEGER)),0)+1 from pedidocompra) as numero
              from ".$this->table." as a 
              where a.localidadid='$localidadid' 
              and a.usuario_creacion='$usuarioid'
@@ -162,7 +162,7 @@
             $id=Guid();
 
              $sql=" 
-             insert into Pedidocompra(id,numero,localidadid,estado, activo,usuario_creacion,fecha_hora_creacion)
+             insert into pedidocompra(id,numero,localidadid,estado, activo,usuario_creacion,fecha_hora_creacion)
              select '$id','".$cab["numero"]."','$localidadid','REG',1,'$usuarioid',$hoy ";
 
              $array = array($sql);
@@ -171,7 +171,7 @@
                 $productoid=$det["productoid"];
                 $cantidad=$det["cantidad"];
 
-                $sql="insert into Pedidocompra_detalle(id,correlativo,Pedidocompraid,localidadid,productoid,descripcion,cantidad,activo,usuario_creacion,fecha_hora_creacion)
+                $sql="insert into pedidocompra_detalle(id,correlativo,Pedidocompraid,localidadid,productoid,descripcion,cantidad,activo,usuario_creacion,fecha_hora_creacion)
                 values(uuid(),$correlativo,'$id','$localidadid','".$productoid."','".$det["descripcion"]."','".$cantidad."',1,'$usuarioid',$hoy)";
                 array_push($array,$sql);
 
@@ -255,11 +255,11 @@
 
                 $correlativo++;
              }
-            $sql="delete from Pedidocompratemp_detalle
+            $sql="delete from pedidocompratemp_detalle
             where localidadid='$localidadid' and usuario_creacion='$usuarioid' ";
             array_push($array,$sql);
 
-            $sql="delete from Pedidocompratemp
+            $sql="delete from pedidocompratemp
             where localidadid='$localidadid' and usuario_creacion='$usuarioid' ";
             array_push($array,$sql);
 

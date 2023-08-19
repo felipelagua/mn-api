@@ -1,5 +1,6 @@
 <?php
 usingdb("cuenta");
+usingdb("caja");
     class DCuenta extends Model{
         private $table="cuenta";
 
@@ -102,11 +103,19 @@ usingdb("cuenta");
             $array = array($sqlInsertarDetalle,$sqlActualizarSaldo);
             $this->db->transac($array);
         }  
-
+        private function obtenerCajaUsuario($usuarioid){
+            $dt=$this->sqldata(db_caja_abierta_usuario_obtener($usuarioid));
+            $caja =null;
+            if(count($dt)>0){
+                $caja=$dt[0];
+            }
+            return $caja;
+        }
         public function transferir($o){
             $saldoOrigen=$this->get($this->table,$o->cuentaorigenid,["saldo"])["saldo"];
             
             $this->validateBalance($saldoOrigen,$o->monto);
+            $array = array();
 
             $odet=new ECuentaDetalle();
             $odet->tipo="SAL";
@@ -115,10 +124,31 @@ usingdb("cuenta");
             $odet->saldo=$saldoOrigen+$odet->monto;
             $odet->cuentaid=$o->cuentaorigenid;
 
-            $sqlInsertarDetalleOrigen=$this->sqlInsert("cuenta_detalle",$odet); 
-            $sqlActualizarSaldoOrigen=$this->sqlUpdateSum("cuenta",$o->cuentaorigenid,"saldo",$odet->monto);
-             
-            $saldoDestino=$this->get($this->table,$o->cuentadestinoid,["saldo"])["saldo"];
+            $sql=$this->sqlInsert("cuenta_detalle",$odet);
+            array_push($array,$sql);
+
+            $sql=$this->sqlUpdateSum("cuenta",$o->cuentaorigenid,"saldo",$odet->monto);
+            array_push($array,$sql);
+
+            $rowdestino=$this->get("cuenta",$o->cuentadestinoid,["saldo","usuarioid"]);
+            $saldoDestino=$rowdestino["saldo"];
+            $usuarioDestino=$rowdestino["usuarioid"];
+            $cajauser=$this->obtenerCajaUsuario($usuarioDestino);
+
+            if($cajauser!=null){
+                $cdet=new ECajaDetalle(null);
+                $cdet->tipo="ING";
+                $cdet->descripcion="TRANSFERENCIA";
+                $cdet->monto=$o->monto;
+                $cdet->saldo=$cajauser["saldo"]+$cdet->monto;
+                $cdet->cajaid=$cajauser["id"];
+
+                $sql=$this->sqlInsert("caja_detalle",$cdet);
+                array_push($array,$sql);
+
+                $sql=$this->sqlUpdateSum("caja",$cajauser["id"],"saldo",$cdet->monto);
+                array_push($array,$sql);
+            }
 
             $ddet=new ECuentaDetalle();
             $ddet->tipo="ING";
@@ -127,10 +157,12 @@ usingdb("cuenta");
             $ddet->saldo=$saldoDestino+$ddet->monto;
             $ddet->cuentaid=$o->cuentadestinoid;
 
-            $sqlInsertarDetalleDestino=$this->sqlInsert("cuenta_detalle",$ddet); 
-            $sqlActualizarSaldoDestino=$this->sqlUpdateSum("cuenta",$o->cuentadestinoid,"saldo",$o->monto);
+            $sql = $this->sqlInsert("cuenta_detalle",$ddet); 
+            array_push($array,$sql);
 
-            $array = array($sqlInsertarDetalleOrigen,$sqlActualizarSaldoOrigen,$sqlInsertarDetalleDestino,$sqlActualizarSaldoDestino);
+            $sql = $this->sqlUpdateSum("cuenta",$o->cuentadestinoid,"saldo",$o->monto);
+            array_push($array,$sql);
+
             $this->db->transac($array);
         } 
 

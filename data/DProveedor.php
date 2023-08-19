@@ -8,7 +8,7 @@
             $this->delete($this->table,$o);
         }
         public function listar($o){
-            $sql=" select id,nombre from ".$this->table." where activo=1 and nombre like  '%".$o->nombre."%'";
+            $sql=" select id,nombre,direccion from ".$this->table." where activo=1 and nombre like  '%".$o->nombre."%'";
             $this->sqlread($sql);
         }
         public function obtener($o){

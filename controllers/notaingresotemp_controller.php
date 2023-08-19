@@ -41,6 +41,13 @@ class notaingresotemp extends Controller{
         $d=new DNotaingresotemp();
         $d->buscarProducto($o);
     }
+    public function buscarProductoNombre(){
+        http::role(NUEVO_INGRESO);
+        http::post();
+        $o=new EFiltro(input());
+        $d=new DNotaingresotemp();
+        $d->buscarProductoNombre($o);
+    }
     public function registrarDetalle(){
         http::role(NUEVO_INGRESO);
         http::put();

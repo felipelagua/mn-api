@@ -43,7 +43,7 @@ class ubicacion extends Controller{
         $d->obtener($o);
     }
     public function obtenerListas(){
-        http::role(CUENTA);
+        http::role(MOTIVO_INGRESO);
         http::post();
         $d=new DUbicacion();
         $d->obtenerListas();

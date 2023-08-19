@@ -6,7 +6,7 @@
             $localidadid=auth::local();
             $grupousuarioid=auth::grupo();
 
-            $sql="SELECT id,codigo,nombre,icono
+            $sql="SELECT id,codigo,nombre,icono,color
             FROM permiso 
             WHERE activo=1
             AND codigo IN (
@@ -23,7 +23,7 @@
             foreach($dtcab as $row){
                 $codigo=$row["codigo"];
                 $sql="
-                SELECT   codigo,nombre,icono,url
+                SELECT   codigo,nombre,icono,url,color
                 FROM grupousuario_acceso AS a
                 INNER JOIN permiso AS b ON b.id=a.permisoid
                 WHERE a.grupousuarioid='$grupousuarioid'

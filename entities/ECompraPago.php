@@ -5,6 +5,7 @@
         public $cuentaid;
         public $descripcion;
         public $pago;
+        public $compraid;
         public function __construct($input) {  
             $this->set($input);
             if(!isset($this->id)){

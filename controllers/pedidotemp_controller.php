@@ -17,7 +17,7 @@ class pedidotemp extends Controller{
     }
 
     public function listar(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -26,7 +26,7 @@ class pedidotemp extends Controller{
     }
 
     public function nuevo(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::put();
         $input=input();
         $o=new EPedidotemp($input);
@@ -35,7 +35,7 @@ class pedidotemp extends Controller{
     }
 
     public function registrar(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::put();
         $input=input();
         $o=new EPedidotemp($input);
@@ -44,7 +44,7 @@ class pedidotemp extends Controller{
     }
  
     public function obtener(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $input=input();
         $o=new EPedidotemp($input);
@@ -52,21 +52,29 @@ class pedidotemp extends Controller{
         $d->obtener($o);
     }
     public function listarDetalle(){
-        http::role(REGISTRAR_PEDIDO);
-        http::post();
-        $d=new DPedidotemp();
-        $d->listarDetalle();
-    }
-    public function buscarProducto(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
         $d=new DPedidotemp();
+        $d->listarDetalle($o);
+    }
+    public function buscarProducto(){
+        http::role(PEDIDO);
+        http::post();
+        $o=new EFiltro(input());
+        $d=new DPedidotemp();
         $d->buscarProducto($o);
     }
+    public function buscarProductoNombre(){
+        http::role(PEDIDO);
+        http::post();
+        $o=new EFiltro(input());
+        $d=new DPedidotemp();
+        $d->buscarProductoNombre($o);
+    }
     public function buscarCliente(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $input=input();
         $o=new EFiltro($input);
@@ -74,7 +82,7 @@ class pedidotemp extends Controller{
         $d->buscarCliente($o);
     }
     public function registrarDetalle(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::put();
         $input=input();
         $o=new EPedidoDetalle($input);
@@ -84,7 +92,7 @@ class pedidotemp extends Controller{
         $d->registrarDetalle($o);
     }
     public function eliminarDetalle(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::delete();
         $input=input();
         $o=new EPedidoDetalle($input); 
@@ -92,7 +100,7 @@ class pedidotemp extends Controller{
         $d->eliminarDetalle($o);
     }
     public function finalizar(){
-        http::role(COMPRA_REGISTRO);
+        http::role(PEDIDO);
         http::put();
         $input=input();
         $o=new EPedidotemp($input);
@@ -101,13 +109,13 @@ class pedidotemp extends Controller{
     }
 
     public function listarPagoCuenta(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $d=new DPedidotemp();
         $d->listarPagoCuenta();
     }
     public function registrarPago(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::put();
         $input=input();
         $o=new EPedidoPago($input);
@@ -117,7 +125,7 @@ class pedidotemp extends Controller{
         $d->registrarPago($o);
     }
     public function eliminarPago(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::delete();
         $input=input();
         $o=new EPedidoDetalle($input); 
@@ -125,7 +133,7 @@ class pedidotemp extends Controller{
         $d->eliminarPago($o);
     }
     public function listarPago(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $input=input();
         $o=new EPedidotemp($input);
@@ -134,13 +142,13 @@ class pedidotemp extends Controller{
     }
   
     public function listarTipopedido(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $d=new DPedidotemp();
         $d->listarTipopedido();
     }
     public function listarUbicacion(){
-        http::role(REGISTRAR_PEDIDO);
+        http::role(PEDIDO);
         http::post();
         $d=new DPedidotemp();
         $d->listarUbicacion();

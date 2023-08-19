@@ -5,7 +5,7 @@
         public $direccion;
         public $venta;
         public $impresora;
-        public $rutaimpresion;
+        public $nombrecorto;
 
         public function __construct($input) {  
             $this->set($input);

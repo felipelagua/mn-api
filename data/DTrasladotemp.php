@@ -1,5 +1,5 @@
 <?php
-usingdb("traslado");
+using("db/traslado");
 usingdb("localidadcosto");
     class DTrasladotemp extends Model{
         private $table="trasladotemp";
@@ -74,29 +74,12 @@ usingdb("localidadcosto");
         public function buscarProducto($o){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-            $sql=" select a.id as productoid,a.nombre as descripcion,cast((b.cantidad-ifnull(c.cantidad,0.00)) AS DECIMAL(10,0))  as cantidad,
-            cast(b.cantidad  AS DECIMAL(10,0)) as stock
-            from producto as a
-            inner join localidad_producto b on b.productoid=a.id and b.localidadid='$localidadid'
-            left join 
-            (SELECT productoid,ifnull(SUM(cantidad),0) AS cantidad
-            FROM trasladotemp_detalle
-            WHERE localidadid='$localidadid' and usuario_creacion!='$usuarioid' and NOT productoid IS NULL
-            GROUP BY productoid) as c on c.productoid=a.id
-             where a.activo=1 
-             and b.activo=1
-             and not a.id in (select productoid from ".$this->table."_detalle
-             where localidadid='$localidadid' and usuario_creacion='$usuarioid')
-             and a.nombre like  '%".$o->nombre."%'
-             order by a.fecha_hora_creacion desc";
-              $this->sqlread($sql);
+            $this->sqlread(db_traslado_producto_buscar($localidadid,$usuarioid,$o->nombre));
         }
         public function listarDetalle(){
             $usuarioid=auth::user();
             $localidadid=auth::local();
-
-             $sqldet= db_trasladotemp_detalle($localidadid,$usuarioid);
-
+            $sqldet= db_trasladotemp_detalle($localidadid,$usuarioid);
             $data["detalle"]=$this->sqldata($sqldet);
             $this->gotoSuccessData($data); 
         }
@@ -210,16 +193,29 @@ usingdb("localidadcosto");
              array_push($array,$sql);
 
              $sql="INSERT INTO trasladotemp_detalle(id,localidadid,productoid,descripcion,cantidad,pedido,activo,usuario_creacion,fecha_hora_creacion)
-             SELECT UUID() AS id,'$localidadid' AS localidadid,C.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
+             SELECT UUID() AS id,'$localidadid' AS localidadid,c.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad) AS cantidad,
              'SI' AS pedido,1 AS activo,'$usuarioid' AS usuario_creacion,'' AS fecha_hora_creacion
              FROM pedidocompra_detalle AS a
              INNER JOIN pedidocompra AS b ON b.id=a.pedidocompraid
              INNER JOIN producto AS c ON c.id=a.productoid
              WHERE a.activo=1 AND b.estado='CMP' AND b.toma='SI'
-             and a.localidadid!='$usuarioid'
-             AND b.activo=1
+             and a.localidadid!='$localidadid'
+             AND b.activo=1  and b.id='$o->pedidocompraid'
+             and not c.id in (select productoid from producto_destino where activo=1)
              GROUP BY c.id,c.nombre
-             ORDER BY c.nombre";
+             UNION ALL
+             SELECT UUID() AS id,'$localidadid' AS localidadid,c.id AS productoid,c.nombre AS descripcion,SUM(a.cantidad*d.cantidad) AS cantidad,
+             'SI' AS pedido,1 AS activo,'$usuarioid' AS usuario_creacion,'' AS fecha_hora_creacion
+             FROM pedidocompra_detalle AS a
+             INNER JOIN pedidocompra AS b ON b.id=a.pedidocompraid         
+             INNER JOIN producto_destino as d on d.productoid=a.productoid and d.activo=1
+             INNER JOIN producto AS c ON c.id=d.itemid
+             WHERE a.activo=1 AND b.estado='CMP' AND b.toma='SI'
+             and a.localidadid!='$localidadid'
+             AND b.activo=1  and b.id='$o->pedidocompraid' 
+             GROUP BY c.id,c.nombre
+             ORDER BY 4
+             ";
              array_push($array,$sql);
              
             $this->db->transacm($array,"Se asignó el pedido correctamente");

@@ -7,7 +7,8 @@
             SELECT a.id, date_format(a.fecha_hora_creacion,'%d/%m/%Y %H:%i') as fecha_hora_creacion,
             a.numero,
             c.nombre AS localidad_nombre,
-            d.nombre AS usuario_nombre
+            d.nombre AS usuario_nombre,
+            (select count(1) from produccion_detalle where produccionid=a.id) as items
             FROM produccion AS a
             INNER JOIN localidad AS c ON c.id=a.localidadid
             INNER JOIN usuario AS d ON d.id=a.usuario_creacion

@@ -34,10 +34,16 @@ class Producciontemp extends Controller{
     public function buscarProducto(){
         http::role(NUEVO_INGRESO);
         http::post();
-        $input=input();
-        $o=new EFiltro($input);
+        $o=new EFiltro(input());
         $d=new DProducciontemp();
         $d->buscarProducto($o);
+    }
+    public function buscarProductoNombre(){
+        http::role(NUEVO_INGRESO);
+        http::post();
+        $o=new EFiltro(input());
+        $d=new DProducciontemp();
+        $d->buscarProductoNombre($o);
     }
     public function registrarDetalle(){
         http::role(NUEVO_INGRESO);

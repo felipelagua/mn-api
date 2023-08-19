@@ -5,7 +5,9 @@ class servicio extends Controller{
         parent::usingData("DServicio");
         parent::usingEntity("EServicio");
         parent::usingEntity("EServicioEnt");
+        parent::usingEntity("EServicioCompra");
         parent::usingEntity("EFiltro");
+        parent::usingEntity("ECuentaDetalle");      
     }
 
     public function registrar(){
@@ -84,6 +86,14 @@ class servicio extends Controller{
         $o=new EFiltro($input);
         $d=new DServicio();
         $d->obtenerDatosPago($o);
+    }
+    public function registrarPago(){
+        http::role(PAGOSERVICIO);
+        http::post();
+        $input=input();
+        $o=new EServicioCompra($input);
+        $d=new DServicio();
+        $d->registrarPago($o);
     }
 }
 

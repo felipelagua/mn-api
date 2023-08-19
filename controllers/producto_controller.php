@@ -29,10 +29,8 @@ class producto extends Controller{
         $d->eliminar($o);
     }
     public function listar(){
-        http::role(PRODUCTO);
-        http::post();
-        $input=input();
-        $o=new EProducto($input);
+        http::role(PRODUCTO);http::post();
+        $o=new EProducto(input());
         $d=new DProducto();
         $d->listar($o);
     }

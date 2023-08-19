@@ -9,7 +9,8 @@
             a.comentario,
             c.nombre AS localidad_nombre,
             d.nombre AS usuario_nombre,
-            e.nombre as solicitadopor_nombre
+            e.nombre as solicitadopor_nombre,
+            (select count(1) from traslado_detalle where trasladoid=a.id) as items
             FROM traslado AS a
             INNER JOIN localidad AS b ON b.id=a.localidaddestinoid
             INNER JOIN localidad AS c ON c.id=a.localidadid

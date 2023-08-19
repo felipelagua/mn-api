@@ -28,5 +28,37 @@ class venta extends Controller{
         $d=new DVenta();
         $d->obtenerFiltros();
     }
+    public function reportediatotal(){
+        http::role(REPORTE_VENTA);
+        http::post();
+        $input=input();
+        $o=new EFiltro($input);
+        $d=new DVenta();
+        $d->reportediatotal($o);
+    }
+    public function reportediacount(){
+        http::role(REPORTE_VENTA);
+        http::post();
+        $input=input();
+        $o=new EFiltro($input);
+        $d=new DVenta();
+        $d->reportediacount($o);
+    }
+    public function reportediahora(){
+        http::role(REPORTE_VENTA);
+        http::post();
+        $input=input();
+        $o=new EFiltro($input);
+        $d=new DVenta();
+        $d->reportediahora($o);
+    }
+    public function productovendido(){
+        http::role(REPORTE_VENTA);
+        http::post();
+        $input=input();
+        $o=new EFiltro($input);
+        $d=new DVenta();
+        $d->productovendido($o);
+    }
 }
 ?>

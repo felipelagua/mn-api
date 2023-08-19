@@ -1,49 +1,43 @@
 <?php
-
+usingdb("login");
+usingdb("diccionario");
     class DLogin extends Model{
  
         public function autenticar($o){
             $this->existe($o);
-            $sql=" select id,nombre ,usuario,clave
-            from usuario 
-            where usuario='$o->usuario' and activo=1";
-
-            $row=$this->sqlgetrow($sql);
+            $row=$this->sqlrow(db_login_usuario_obtener($o->usuario));
             if($row["clave"]!=$o->clave){
-                $this->gotoError("El Usuario o la contraseña no es válida");
+                $this->gotoError("El Usuario o la contraseña no es válida 2");
             }
             $data["usuario"]=$row;
             return $data;
         }
+        public function cambiarClave($o){
+            $usuarioid=auth::user();
+            $hoy=now();
+            $sql="update usuario set clave='$o->nuevaclave',fecha_hora_modificacion=$hoy
+            where id='$usuarioid'";
+            $this->db->execute($sql);
+            $this->gotoSuccess("Se procesaron los datos con éxito. Inicie sesión nuevamente","");
+
+        }
         private function existe($o){
-            $sql=" select id
-            from usuario
-             where usuario='$o->usuario' and activo=1";
-            $dt=$this->sqldata($sql);
+            $dt=$this->sqldata(db_login_usuario_obtener($o->usuario));
             if(count($dt)==0){
-                $this->gotoError("El Usuario o la contraseña no es válida");
+                $this->gotoError("El Usuario o la contraseña no es válida 1");
             }
         }
-        public function generateSesion($o){
-            $this->gotoSuccessData($o);
+        public function listarLocalidad(){
+            $usuarioid=auth::user();
+            $dt= $this->sqldata(db_login_localidad_listar($usuarioid ));
+            return $dt;
         }
-        public function listarLocalidad($id){
-            $sql="SELECT id,nombre,direccion
-            FROM localidad
-            WHERE activo=1
-            AND id IN (SELECT localidadid FROM usuario_acceso WHERE usuarioid='$id')
-            ORDER BY nombre";
-            $this->sqlread($sql);
+        public function listarDiccionario(){
+            $dt= $this->sqldata(db_diccionario_listar());
+            return $dt;
         }
         public function obtenerGrupo($usuarioid,$localidadid){
-            $sql="SELECT a.localidadid,a.grupousuarioid
-            FROM usuario_acceso AS a
-            INNER JOIN localidad AS b ON b.id=a.localidadid
-            WHERE a.usuarioid='$usuarioid'
-            and a.localidadid='$localidadid'
-            AND a.activo=1
-            AND b.activo=1";
-            $row=$this->sqlgetrow($sql);
+            $row=$this->sqlrow(db_login_grupo_obtener($usuarioid,$localidadid));
             return $row;
         }
         public function listarPermisos($grupousuarioid){

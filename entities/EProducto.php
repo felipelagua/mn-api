@@ -10,6 +10,12 @@
         public $venta;
         public $instantaneo;
         public $terminado;
+        public $deshabilitado;
+        public $importecaja;
+        public $precio_venta;
+        public $imagen;
+        public $nombre_web;
+        public $descripcion;
  
         public function __construct($input) {  
             $this->set($input);
